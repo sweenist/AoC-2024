@@ -29,6 +29,14 @@ public class Day1 : IDay
 
     public void Part2()
     {
+        var similarityMultipliers = _second.GroupBy(x => x).ToDictionary(x => x.Key, x => x.Count());
+        var sum = 0L;
 
+        foreach (var id in _first)
+        {
+            sum += id * similarityMultipliers.GetValueOrDefault(id, 0);
+        }
+
+        Console.WriteLine($"Similarity Score of the Historian's list is: {sum}");
     }
 }

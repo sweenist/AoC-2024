@@ -8,9 +8,9 @@ switch (day)
     case "1":
         var solver = new Day1();
         if (part == "1")
-        {
             solver.Part1();
-        }
+        else if (part == "2")
+            solver.Part2();
         else
             throw new ArgumentException($"Part {part} not defined.");
         break;
