@@ -1,21 +1,20 @@
 namespace AdventOfCode2024.Days;
 
-public class Day1
+public class Day1 : IDay
 {
-    private List<int> _first = new();
-    private List<int> _second = new();
+    private readonly List<int> _first = [];
+    private readonly List<int> _second = [];
 
     public Day1()
     {
         var inputFile = $"inputData/{this.GetType().Name}.txt";
-        using (var sr = new StreamReader(inputFile))
+        using var sr = new StreamReader(inputFile);
+        while (!sr.EndOfStream)
         {
-            while (!sr.EndOfStream)
-            {
-                var pair = sr.ReadLine().Split("   ");
-                _first.Add(Convert.ToInt32(pair[0]));
-                _second.Add(Convert.ToInt32(pair[1]));
-            }
+            var pair = (sr.ReadLine()?.Split("   "))
+                ?? throw new InvalidDataException("unexpected data parsing issue");
+            _first.Add(Convert.ToInt32(pair[0]));
+            _second.Add(Convert.ToInt32(pair[1]));
         }
     }
 
@@ -23,7 +22,6 @@ public class Day1
     {
         _first.Sort();
         _second.Sort();
-        Console.WriteLine($"First: {_first[0]}| Second: {_second[0]}");
 
         var totalDiffs = _first.Zip(_second, (a, b) => Math.Abs(b - a)).Sum();
         Console.WriteLine($"Total Diffs are: {totalDiffs}");
@@ -31,6 +29,6 @@ public class Day1
 
     public void Part2()
     {
-        throw new NotImplementedException("Not ready for Part 2 yet");
+
     }
 }
