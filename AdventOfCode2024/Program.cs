@@ -1,19 +1,42 @@
 ﻿using AdventOfCode2024.Days;
 
-var day = args[0];
-var part = args[1];
+int day;
+int part;
+var isDayValid = int.TryParse(args[0], out day)
+    && day > 0
+    && day <= 25;
 
-switch (day)
+var isPartValid = int.TryParse(args[1], out part)
+    && (part == 1 || part == 2);
+
+if (!(isDayValid && isPartValid))
+    throw new ArgumentException($@"
+    Usage: dotnet run --project AdventOfCode2024.csproj d p
+where 
+    d is a number (1-25)
+    p is a number (1-2)
+
+Recieved args: {string.Join(' ', args)}
+");
+
+var fullyQualifiedClassName = $"{nameof(AdventOfCode2024)}.{nameof(AdventOfCode2024.Days)}.Day{day}";
+var dayType = Type.GetType(fullyQualifiedClassName)
+    ?? throw new Exception($"Cannot derive type of {fullyQualifiedClassName}");
+
+IDay dayInstance = Activator.CreateInstance(dayType!) as IDay
+    ?? throw new Exception($"Cannot instantiate {dayType?.Name}");
+
+Console.ForegroundColor = ConsoleColor.DarkMagenta;
+Console.WriteLine(new string('-', 80));
+switch (part)
 {
-    case "1":
-        var solver = new Day1();
-        if (part == "1")
-            solver.Part1();
-        else if (part == "2")
-            solver.Part2();
-        else
-            throw new ArgumentException($"Part {part} not defined.");
+    case 1:
+        dayInstance.Part1();
+        break;
+    case 2:
+        dayInstance.Part2();
         break;
     default:
-        throw new NotImplementedException($"no day matching {day} yet");
+        throw new Exception($"Unexpected error for part {part}");
 }
+Console.WriteLine(new string('-', 80));
