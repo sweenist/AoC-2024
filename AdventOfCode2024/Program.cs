@@ -40,3 +40,4 @@ switch (part)
         throw new Exception($"Unexpected error for part {part}");
 }
 Console.WriteLine(new string('-', 80));
+Console.ResetColor();
