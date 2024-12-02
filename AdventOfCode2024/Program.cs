@@ -27,7 +27,8 @@ var fullyQualifiedClassName = $"{nameof(AdventOfCode2024)}.{nameof(AdventOfCode2
 var dayType = Type.GetType(fullyQualifiedClassName)
     ?? throw new Exception($"Cannot derive type of {fullyQualifiedClassName}");
 
-IDay dayInstance = Activator.CreateInstance(dayType!, useExample) as IDay
+Console.ForegroundColor = ConsoleColor.Yellow;
+IDay dayInstance = Activator.CreateInstance(dayType!, args: useExample) as IDay
     ?? throw new Exception($"Cannot instantiate {dayType?.Name}");
 
 Console.ForegroundColor = ConsoleColor.DarkMagenta;
