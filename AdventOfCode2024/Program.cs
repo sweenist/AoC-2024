@@ -2,6 +2,8 @@
 
 int day;
 int part;
+bool useExample = false;
+
 var isDayValid = int.TryParse(args[0], out day)
     && day > 0
     && day <= 25;
@@ -11,19 +13,21 @@ var isPartValid = int.TryParse(args[1], out part)
 
 if (!(isDayValid && isPartValid))
     throw new ArgumentException($@"
-    Usage: dotnet run --project AdventOfCode2024.csproj d p
+    Usage: dotnet run --project AdventOfCode2024.csproj d p [useExample]
 where 
-    d is a number (1-25)
-    p is a number (1-2)
-
+    d is a number (1-25).
+    p is a number (1-2).
+    useExample(optional) - pass 'true' to args if opting to use the example data.
 Recieved args: {string.Join(' ', args)}
 ");
+
+useExample = args.Length >= 3 && args[2] == "true";
 
 var fullyQualifiedClassName = $"{nameof(AdventOfCode2024)}.{nameof(AdventOfCode2024.Days)}.Day{day}";
 var dayType = Type.GetType(fullyQualifiedClassName)
     ?? throw new Exception($"Cannot derive type of {fullyQualifiedClassName}");
 
-IDay dayInstance = Activator.CreateInstance(dayType!) as IDay
+IDay dayInstance = Activator.CreateInstance(dayType!, useExample) as IDay
     ?? throw new Exception($"Cannot instantiate {dayType?.Name}");
 
 Console.ForegroundColor = ConsoleColor.DarkMagenta;

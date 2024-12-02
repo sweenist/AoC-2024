@@ -5,7 +5,7 @@ public class Day1 : IDay
     private readonly List<int> _first = [];
     private readonly List<int> _second = [];
 
-    public Day1()
+    public Day1(bool useExample = false)
     {
         var inputFile = $"inputData/{GetType().Name}.txt";
         using var sr = new StreamReader(inputFile);
