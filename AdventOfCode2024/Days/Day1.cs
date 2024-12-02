@@ -7,7 +7,7 @@ public class Day1 : IDay
 
     public Day1()
     {
-        var inputFile = $"inputData/{this.GetType().Name}.txt";
+        var inputFile = $"inputData/{GetType().Name}.txt";
         using var sr = new StreamReader(inputFile);
         while (!sr.EndOfStream)
         {
@@ -24,7 +24,7 @@ public class Day1 : IDay
         _second.Sort();
 
         var totalDiffs = _first.Zip(_second, (a, b) => Math.Abs(b - a)).Sum();
-        Console.WriteLine($"Total Diffs are: {totalDiffs}");
+        Console.WriteLine($"Total span between ordered ids are: {totalDiffs}");
     }
 
     public void Part2()
