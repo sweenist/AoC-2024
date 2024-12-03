@@ -2,7 +2,6 @@ namespace AdventOfCode2024.Days;
 
 public class Day2 : IDay
 {
-    private readonly bool _useExample;
     private string _example = @"7 6 4 2 1
 1 2 7 8 9
 9 7 6 2 1
@@ -14,7 +13,6 @@ public class Day2 : IDay
 
     public Day2(bool useExample = false)
     {
-        _useExample = useExample;
         if (useExample)
         {
             Console.WriteLine("Using the example data");
