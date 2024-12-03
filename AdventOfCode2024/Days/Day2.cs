@@ -1,6 +1,3 @@
-using AdventOfCode2024.Utility;
-using Microsoft.Win32.SafeHandles;
-
 namespace AdventOfCode2024.Days;
 
 public class Day2 : IDay
@@ -38,10 +35,11 @@ public class Day2 : IDay
         var safeReports = 0;
         foreach (var report in _input)
         {
-            var (assessment, increasingPower, decreasingPower) = ParseReport(report.Split().Select(x => int.Parse(x)).ToList());
+            var assessment = report.Split().Select(x => int.Parse(x)).ToList();
+            var (increasingPower, decreasingPower) = ParseReport(assessment);
 
-            var allIncreasing = increasingPower.All(x => x == true);
-            var allDecreasing = decreasingPower.All(x => x == true);
+            var allIncreasing = increasingPower.All(x => x);
+            var allDecreasing = decreasingPower.All(x => x);
 
             safeReports += allIncreasing || allDecreasing ? 1 : 0;
         }
@@ -53,7 +51,8 @@ public class Day2 : IDay
         var safeReports = 0;
         foreach (var report in _input)
         {
-            var (assessment, increasingPower, decreasingPower) = ParseReport(report.Split().Select(x => int.Parse(x)).ToList());
+            var assessment = report.Split().Select(x => int.Parse(x)).ToList();
+            var (increasingPower, decreasingPower) = ParseReport(assessment);
 
             var allIncreasing = increasingPower.All(x => x == true);
             var allDecreasing = decreasingPower.All(x => x == true);
@@ -64,83 +63,45 @@ public class Day2 : IDay
                 continue;
             }
 
-            var increasingPowerFaults = increasingPower.Count(x => x == false);
-            var decreasingPowerFaults = decreasingPower.Count(x => x == false);
+            //Handle Dampening
+            var increasingIndex = increasingPower.IndexOf(false);
+            var decreasingIndex = decreasingPower.IndexOf(false);
+            var increasingFixedByDampening = IsFixedByDampening(assessment, increasingIndex, useOffset: false, shouldDecrease: false)
+                || IsFixedByDampening(assessment, increasingIndex, useOffset: true, shouldDecrease: false);
+            var decreasingFixedByDampening = IsFixedByDampening(assessment, decreasingIndex, useOffset: false, shouldDecrease: true)
+                || IsFixedByDampening(assessment, decreasingIndex, useOffset: true, shouldDecrease: true);
 
-            switch (increasingPowerFaults)
+            if (increasingFixedByDampening || decreasingFixedByDampening)
             {
-                case 2:
-                    if (increasingPower.HasAnyAdjacent(false))
-                    {
-                        assessment.RemoveAt(increasingPower.IndexOf(false) + 1);
-                        var (_, inc, _) = ParseReport(assessment);
-                        allIncreasing = inc.All(x => x == true);
-                    }
-                    break;
-                case 1:
-                    // take up to first index, skip, take rest;
-                    //take up to second index, skip take rest;
-                    break;
-                default: break;
+                safeReports++;
+                continue;
             }
-
-            if (increasingPower.Count(x => x == false) <= 2)
-            {
-                if (increasingPower.Count(x => x == false) == 1 && increasingPower[0] == false)
-                {
-                    Console.WriteLine($"Increasing: First object was false in {string.Join(',', increasingPower)}");
-                    safeReports++;
-                    continue;
-                }
-                var index = increasingPower.IndexOf(false) + 1;
-                if (index == increasingPower.Count || !increasingPower[index])
-                {
-                    Console.WriteLine($"Removing from {string.Join(',', assessment)} at index {index}");
-                    Console.WriteLine($"\t{string.Join("\n\t", increasingPower)}");
-                    assessment.RemoveAt(index);
-
-                    var (_, increasingPowerDampened, _) = ParseReport(assessment);
-                    Console.WriteLine($"\nWith Dampening{string.Join("\n\t", increasingPowerDampened)}");
-                    allIncreasing = increasingPowerDampened.All(x => x == true);
-                    safeReports += allIncreasing ? 1 : 0;
-                    continue;
-                }
-            }
-
-            if (decreasingPower.Count(x => x == false) <= 2)
-            {
-                if (decreasingPower.Count(x => x == false) == 1 && decreasingPower[0] == false)
-                {
-                    Console.WriteLine($"Decreasing: First object was false in {string.Join(',', decreasingPower)}");
-                    safeReports++;
-                    continue;
-                }
-                var index = decreasingPower.IndexOf(false) + 1;
-                if (index == decreasingPower.Count || !decreasingPower[index])
-                {
-                    Console.WriteLine($"Removing from {string.Join(',', assessment)} at index {index}");
-                    Console.WriteLine($"\t{string.Join("\n\t", decreasingPower)}");
-                    assessment.RemoveAt(index);
-
-                    var (_, _, decreasingPowerDampened) = ParseReport(assessment);
-                    allDecreasing = decreasingPowerDampened.All(x => x == true);
-
-                    safeReports += allDecreasing ? 1 : 0;
-                }
-            }
-
         }
         Console.WriteLine($"There are {safeReports} safe report(s) when dampening is applied");
     }
 
-    private (List<int> assessment, List<bool> increasingPower, List<bool> decreasingPower) ParseReport(List<int> report)
+    private static (List<bool> increasingPower, List<bool> decreasingPower) ParseReport(List<int> report)
     {
-        var assessment = report;
-        var left = assessment.Take(assessment.Count - 1);
-        var right = assessment.Skip(1);
+        var left = report.Take(report.Count - 1);
+        var right = report.Skip(1);
         var increasingPower = left.Zip(right, (a, b) => a < b && b - a >= 1 && b - a <= 3).ToList();
         var decreasingPower = left.Zip(right, (a, b) => a > b && a - b >= 1 && a - b <= 3).ToList();
 
-        return (assessment!, increasingPower, decreasingPower);
+        return (increasingPower, decreasingPower);
+    }
+
+    private static bool IsFixedByDampening(IList<int> source, int index, bool useOffset, bool shouldDecrease)
+    {
+        var maxIndex = source.Count - 1;
+        var offset = useOffset ? 1 : 0;
+
+        var dampenedValues = new List<int>(source);
+        dampenedValues.RemoveAt(Math.Min(index + offset, maxIndex));
+
+        var (increase, decrease) = ParseReport(dampenedValues);
+
+        return shouldDecrease
+            ? decrease.All(x => x)
+            : increase.All(x => x);
     }
 }
