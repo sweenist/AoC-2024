@@ -5,7 +5,7 @@ Advent of Code 2024
 
 Day 1 &nbsp;&nbsp; 🟢  
 Day 2 &nbsp;&nbsp; 🟢  
-Day 3 &nbsp;&nbsp; ⚫  
+Day 3 &nbsp;&nbsp; 🟢  
 Day 4 &nbsp;&nbsp; ⚫  
 Day 5 &nbsp;&nbsp; ⚫  
 Day 6 &nbsp;&nbsp; ⚫  
