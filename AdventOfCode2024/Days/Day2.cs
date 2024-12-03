@@ -1,5 +1,3 @@
-using Microsoft.Win32.SafeHandles;
-
 namespace AdventOfCode2024.Days;
 
 public class Day2 : IDay
@@ -38,10 +36,10 @@ public class Day2 : IDay
         foreach (var report in _input)
         {
             var assessment = report.Split().Select(x => int.Parse(x)).ToList();
-            var left = assessment.Take(assessment.Count - 1);
-            var right = assessment.Skip(1);
-            var allIncreasing = left.Zip(right, (a, b) => a < b && b - a >= 1 && b - a <= 3).All(x => x == true);
-            var allDecreasing = left.Zip(right, (a, b) => a > b && a - b >= 1 && a - b <= 3).All(x => x == true);
+            var (increasingPower, decreasingPower) = ParseReport(assessment);
+
+            var allIncreasing = increasingPower.All(x => x);
+            var allDecreasing = decreasingPower.All(x => x);
 
             safeReports += allIncreasing || allDecreasing ? 1 : 0;
         }
@@ -50,6 +48,60 @@ public class Day2 : IDay
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var safeReports = 0;
+        foreach (var report in _input)
+        {
+            var assessment = report.Split().Select(x => int.Parse(x)).ToList();
+            var (increasingPower, decreasingPower) = ParseReport(assessment);
+
+            var allIncreasing = increasingPower.All(x => x == true);
+            var allDecreasing = decreasingPower.All(x => x == true);
+
+            if (allIncreasing || allDecreasing)
+            {
+                safeReports++;
+                continue;
+            }
+
+            //Handle Dampening
+            var increasingIndex = increasingPower.IndexOf(false);
+            var decreasingIndex = decreasingPower.IndexOf(false);
+            var increasingFixedByDampening = IsFixedByDampening(assessment, increasingIndex, useOffset: false, shouldDecrease: false)
+                || IsFixedByDampening(assessment, increasingIndex, useOffset: true, shouldDecrease: false);
+            var decreasingFixedByDampening = IsFixedByDampening(assessment, decreasingIndex, useOffset: false, shouldDecrease: true)
+                || IsFixedByDampening(assessment, decreasingIndex, useOffset: true, shouldDecrease: true);
+
+            if (increasingFixedByDampening || decreasingFixedByDampening)
+            {
+                safeReports++;
+                continue;
+            }
+        }
+        Console.WriteLine($"There are {safeReports} safe report(s) when dampening is applied");
+    }
+
+    private static (List<bool> increasingPower, List<bool> decreasingPower) ParseReport(List<int> report)
+    {
+        var left = report.Take(report.Count - 1);
+        var right = report.Skip(1);
+        var increasingPower = left.Zip(right, (a, b) => a < b && b - a >= 1 && b - a <= 3).ToList();
+        var decreasingPower = left.Zip(right, (a, b) => a > b && a - b >= 1 && a - b <= 3).ToList();
+
+        return (increasingPower, decreasingPower);
+    }
+
+    private static bool IsFixedByDampening(IList<int> source, int index, bool useOffset, bool shouldDecrease)
+    {
+        var maxIndex = source.Count - 1;
+        var offset = useOffset ? 1 : 0;
+
+        var dampenedValues = new List<int>(source);
+        dampenedValues.RemoveAt(Math.Min(index + offset, maxIndex));
+
+        var (increase, decrease) = ParseReport(dampenedValues);
+
+        return shouldDecrease
+            ? decrease.All(x => x)
+            : increase.All(x => x);
     }
 }
