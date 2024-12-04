@@ -32,24 +32,31 @@ MXMXAXMASX";
 
     public void Part1()
     {
-        const string searchPattern = "XMAS";
-        const string reversePattern = "SAMX";
+        const string WORD = "XMAS";
+        var offsets = new Dictionary<string, int[]>{
+            {"LEFT", [1,0] },
+            {"RIGHT", [-1,0] },
+            {"DOWN", [0,1] },
+            {"UP", [0,-1] },
+            {"LEFTDOWN", [1,1] },
+            {"LEFTUP", [1,-1] },
+            {"RIGHTDOWN", [-1,1] },
+            {"RIGHTUP", [-1,-1] },
+        };
 
         var totalFound = 0;
+        var anchors = new List<(int x, int y)>();
+        var maxX = _input[0].Length;
+        var maxY = _input.Count;
+        var boundX = maxX - 1;
+        var boundY = maxY - 1;
 
-        foreach (var line in _input)
-        {
-            var matches = Regex.Matches(line, searchPattern);
-            var sehctam = Regex.Matches(line, reversePattern);
-            totalFound += matches.Count + sehctam.Count;
-        }
-        var pivot = PivotInput(true);
-        foreach (var line in pivot)
-        {
-            var matches = Regex.Matches(line, searchPattern);
-            var sehctam = Regex.Matches(line, reversePattern);
-            totalFound += matches.Count + sehctam.Count;
-        }
+        for (var y = 0; y < maxY; y++)
+            for (var x = 0; x < maxX; x++)
+            {
+                var keys = GetKeys(offsets.Keys.ToList(), x, y);
+                
+            }
 
         Console.WriteLine($"Found {totalFound} words in puzzle");
     }
@@ -81,5 +88,11 @@ MXMXAXMASX";
             }
         }
         return orthagonal;
+    }
+
+    private List<string> GetKeys(List<string> keys, int x, int y)
+    {
+        if(x==0) keys = keys.Where(k => !k.StartsWith("RIGHT")).ToList();
+        if(y==0) keys = keys.Where(k => !k.EndsWith("UP")).ToList();
     }
 }
