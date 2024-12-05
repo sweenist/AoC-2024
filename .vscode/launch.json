@@ -11,8 +11,8 @@
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/AdventOfCode2024/bin/Debug/net8.0/AdventOfCode2024.dll",
       "args": [
-        "4",
-        "2",
+        "5",
+        "1",
         "true"
       ],
       "cwd": "${workspaceFolder}/AdventOfCode2024",
