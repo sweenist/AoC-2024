@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+using System.Numerics;
 
 namespace AdventOfCode2024.Days;
 
@@ -33,29 +33,51 @@ MXMXAXMASX";
     public void Part1()
     {
         const string WORD = "XMAS";
-        var offsets = new Dictionary<string, int[]>{
-            {"LEFT", [1,0] },
-            {"RIGHT", [-1,0] },
-            {"DOWN", [0,1] },
-            {"UP", [0,-1] },
-            {"LEFTDOWN", [1,1] },
-            {"LEFTUP", [1,-1] },
-            {"RIGHTDOWN", [-1,1] },
-            {"RIGHTUP", [-1,-1] },
+        var offsets = new Dictionary<string, Vector2>{
+            {"LEFT", new Vector2(1,0) },
+            {"RIGHT", new Vector2(-1,0) },
+            {"DOWN", new Vector2(0,1) },
+            {"UP", new Vector2(0,-1) },
+            {"LEFTDOWN", new Vector2(1,1) },
+            {"LEFTUP", new Vector2(1,-1) },
+            {"RIGHTDOWN", new Vector2(-1,1) },
+            {"RIGHTUP", new Vector2(-1,-1) },
         };
 
         var totalFound = 0;
-        var anchors = new List<(int x, int y)>();
-        var maxX = _input[0].Length;
-        var maxY = _input.Count;
-        var boundX = maxX - 1;
-        var boundY = maxY - 1;
+        var anchors = new List<Vector2>();
+        var grid = new Grid { Length = _input[0].Length, Width = _input.Count };
 
-        for (var y = 0; y < maxY; y++)
-            for (var x = 0; x < maxX; x++)
+
+        void Traverse(Vector2 current, int wordIndex, string trajectory = "")
+        {
+            var keys = GetKeys([.. offsets.Keys], current, grid);
+            var foundKeys = keys.Where(k => (k == trajectory || trajectory == string.Empty)
+                                        && GetLetter(offsets[k] + current) == WORD[wordIndex])
+                                .ToList();
+            if (foundKeys.Count == 0)
+                return;
+
+            foreach (var key in foundKeys)
             {
-                var keys = GetKeys(offsets.Keys.ToList(), x, y);
-                
+                if (wordIndex == WORD.Length - 1)
+                {
+                    totalFound++;
+                    continue;
+                }
+
+                var nextPosition = offsets[key] + current;
+                Traverse(nextPosition, wordIndex + 1, key);
+            }
+        }
+
+        for (var y = 0; y < grid.Width; y++)
+            for (var x = 0; x < grid.Length; x++)
+            {
+                var currentPosition = new Vector2(x, y);
+                if (GetLetter(currentPosition) != WORD[0])
+                    continue;
+                Traverse(currentPosition, 1);
             }
 
         Console.WriteLine($"Found {totalFound} words in puzzle");
@@ -66,33 +88,25 @@ MXMXAXMASX";
         throw new NotImplementedException();
     }
 
-    public List<string> PivotInput(bool debug = false)
+    private static List<string> GetKeys(List<string> keys, Vector2 pos, Grid grid)
     {
-        var orthagonal = new List<string>();
-        for (var i = 0; i < _input[0].Length; i++)
-        {
-            orthagonal.Add(string.Join("", _input.Select(x => x[i])));
-        }
-        if (debug)
-        {
-            Console.WriteLine("---Original---");
-            foreach (var line in _input)
-            {
-                Console.WriteLine(string.Join(' ', line.ToCharArray()));
-            }
-
-            Console.WriteLine("---Pivot---");
-            foreach (var line in orthagonal)
-            {
-                Console.WriteLine(string.Join(' ', line.ToCharArray()));
-            }
-        }
-        return orthagonal;
+        if (pos.X == 0) keys = keys.Where(k => !k.StartsWith("RIGHT")).ToList();
+        if (pos.Y == 0) keys = keys.Where(k => !k.EndsWith("UP")).ToList();
+        if (pos.X == grid.BoundX) keys = keys.Where(k => !k.StartsWith("LEFT")).ToList();
+        if (pos.Y == grid.BoundY) keys = keys.Where(k => !k.EndsWith("DOWN")).ToList();
+        return keys;
     }
 
-    private List<string> GetKeys(List<string> keys, int x, int y)
+    private char GetLetter(Vector2 pos)
     {
-        if(x==0) keys = keys.Where(k => !k.StartsWith("RIGHT")).ToList();
-        if(y==0) keys = keys.Where(k => !k.EndsWith("UP")).ToList();
+        return _input[(int)pos.Y][(int)pos.X];
+    }
+
+    private record Grid
+    {
+        public int Length { get; set; }
+        public int Width { get; set; }
+        public int BoundX => Length - 1;
+        public int BoundY => Width - 1;
     }
 }
