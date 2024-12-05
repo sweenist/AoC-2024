@@ -7,7 +7,7 @@ Day 1 &nbsp;&nbsp; 🟢
 Day 2 &nbsp;&nbsp; 🟢  
 Day 3 &nbsp;&nbsp; 🟢  
 Day 4 &nbsp;&nbsp; 🟢  
-Day 5 &nbsp;&nbsp; ⚫  
+Day 5 &nbsp;&nbsp; 🟡  
 Day 6 &nbsp;&nbsp; ⚫  
 Day 7 &nbsp;&nbsp; ⚫  
 Day 8 &nbsp;&nbsp; ⚫  
