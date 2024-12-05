@@ -12,7 +12,7 @@
       "program": "${workspaceFolder}/AdventOfCode2024/bin/Debug/net8.0/AdventOfCode2024.dll",
       "args": [
         "4",
-        "1",
+        "2",
         "true"
       ],
       "cwd": "${workspaceFolder}/AdventOfCode2024",

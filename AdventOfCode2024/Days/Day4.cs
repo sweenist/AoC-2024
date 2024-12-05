@@ -45,7 +45,6 @@ MXMXAXMASX";
         };
 
         var totalFound = 0;
-        var anchors = new List<Vector2>();
         var grid = new Grid { Length = _input[0].Length, Width = _input.Count };
 
 
@@ -75,9 +74,9 @@ MXMXAXMASX";
             for (var x = 0; x < grid.Length; x++)
             {
                 var currentPosition = new Vector2(x, y);
-                if (GetLetter(currentPosition) != WORD[0])
-                    continue;
-                Traverse(currentPosition, 1);
+                // if (GetLetter(currentPosition) != WORD[0])
+                //     continue;
+                Traverse(currentPosition, 0);
             }
 
         Console.WriteLine($"Found {totalFound} words in puzzle");
