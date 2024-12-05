@@ -45,7 +45,11 @@ MXMXAXMASX";
         };
 
         var totalFound = 0;
-        var grid = new Grid { Length = _input[0].Length, Width = _input.Count };
+        var grid = new Grid
+        {
+            Height = _input.Count,
+            Width = _input[0].Length,
+        };
 
 
         void Traverse(Vector2 current, int wordIndex, string trajectory = "")
@@ -54,6 +58,7 @@ MXMXAXMASX";
             var foundKeys = keys.Where(k => (k == trajectory || trajectory == string.Empty)
                                         && GetLetter(offsets[k] + current) == WORD[wordIndex])
                                 .ToList();
+
             if (foundKeys.Count == 0)
                 return;
 
@@ -71,12 +76,12 @@ MXMXAXMASX";
         }
 
         for (var y = 0; y < grid.Width; y++)
-            for (var x = 0; x < grid.Length; x++)
+            for (var x = 0; x < grid.Height; x++)
             {
                 var currentPosition = new Vector2(x, y);
-                // if (GetLetter(currentPosition) != WORD[0])
-                //     continue;
-                Traverse(currentPosition, 0);
+                if (GetLetter(currentPosition) != WORD[0])
+                    continue;
+                Traverse(currentPosition, 1);
             }
 
         Console.WriteLine($"Found {totalFound} words in puzzle");
@@ -84,7 +89,39 @@ MXMXAXMASX";
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var totalXmas = 0;
+        var offsets = new List<Vector2>{
+            new(-1,-1), //top-left
+            new(1,-1),  //top-right
+            new(-1,1),  //bottom-left
+            new(1,1),   //bottom-right
+        };
+
+        var grid = new Grid
+        {
+            Height = _input.Count,
+            Width = _input[0].Length,
+        };
+
+        void Xtreme(Vector2 current)
+        {
+            var letters = offsets.Select(x => GetLetter(x + current)).ToList();
+            if (letters.Count(x => x == 'M') != 2
+                || letters.Count(x => x == 'S') != 2
+                || letters.First().Equals(letters.Last()))
+                return;
+
+            totalXmas++;
+        }
+
+        for (var y = 1; y < grid.BoundY; y++)
+            for (var x = 1; x < grid.BoundX; x++)
+            {
+                var currentPosition = new Vector2(x, y);
+                if (GetLetter(currentPosition) == 'A')
+                    Xtreme(currentPosition);
+            }
+        Console.WriteLine($"Found a total of {totalXmas} X-MASes");
     }
 
     private static List<string> GetKeys(List<string> keys, Vector2 pos, Grid grid)
@@ -103,9 +140,9 @@ MXMXAXMASX";
 
     private record Grid
     {
-        public int Length { get; set; }
+        public int Height { get; set; }
         public int Width { get; set; }
-        public int BoundX => Length - 1;
-        public int BoundY => Width - 1;
+        public int BoundX => Width - 1;
+        public int BoundY => Height - 1;
     }
 }
