@@ -1,3 +1,5 @@
+using AdventOfCode2024.Utility;
+
 namespace AdventOfCode2024.Days;
 
 public class Day5 : IDay
@@ -41,12 +43,13 @@ public class Day5 : IDay
         {
             Console.WriteLine("Using the example data");
             _input.AddRange(_example.Split('\n'));
-            return;
         }
-        var inputFile = $"inputData/{GetType().Name}.txt";
-        using var sr = new StreamReader(inputFile);
-        _input.AddRange(sr.ReadToEnd().Split('\n'));
-
+        else
+        {
+            var inputFile = $"inputData/{GetType().Name}.txt";
+            using var sr = new StreamReader(inputFile);
+            _input.AddRange(sr.ReadToEnd().Split('\n'));
+        }
         _orderingRules = GetOrderingRules();
         _pagesToPrint = GetPageUpdates();
     }
@@ -82,7 +85,26 @@ public class Day5 : IDay
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var incorrectOrders = new List<List<int>>();
+
+        foreach (var print in _pagesToPrint)
+            for (var i = 1; i < print.Count; i++)
+            {
+                var key = print[i];
+                if (!_orderingRules.ContainsKey(key))
+                    continue;
+                var rules = _orderingRules[key];
+                var left = print.Take(i);
+                if (rules.Intersect(left).Any())
+                {
+                    incorrectOrders.Add(print);
+                    break;
+                }
+            }
+
+        var corrected = incorrectOrders.Select(Sort).Select(x => x.Middle()).Sum();
+
+        Console.WriteLine($"Total of middle page numbers of correct rules: {corrected}");
     }
 
     private Dictionary<int, List<int>> GetOrderingRules()
@@ -99,5 +121,26 @@ public class Day5 : IDay
                      .Select(x => x.Split(',').
                         Select(int.Parse).ToList())
                      .ToList();
+    }
+
+    private List<int> Sort(List<int> source)
+    {
+        var target = new List<int> { source[0] };
+        for (var i = 1; i < source.Count; i++)
+        {
+            var item = source[i];
+            var rule = _orderingRules.GetValueOrDefault(item);
+            if (rule is null || !rule!.Intersect(target).Any())
+            {
+                target.Add(item);
+                continue;
+            }
+
+            var minIndex = rule!.Intersect(target).Min(target.IndexOf);
+            target.Insert(minIndex, item);
+            continue;
+        }
+
+        return target;
     }
 }
