@@ -38,14 +38,16 @@ public class Day6 : IDay
 
         var guardStartPosition = GetGuardStartPosition();
         var guard = new Guard(GetGuardStartPosition());
-        var steps = CountGuardSteps(guard, barriers);
+        RunGuardTrack(guard, barriers);
 
-        Console.WriteLine($"The guard took {steps} steps.");
+        Console.WriteLine($"The guard took {guard.Steps.Count} steps.");
     }
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var barriers = _input.SelectMany(SetupFieldRow).ToList();
+        var guardStartPosition = GetGuardStartPosition();
+        var guard = new Guard(GetGuardStartPosition());
     }
 
     private int FieldWidth => _input[0].Length;
@@ -66,40 +68,26 @@ public class Day6 : IDay
         return new Vector2(x, y);
     }
 
-    private long CountGuardSteps(Guard guard, List<Vector2> barriers)
+    private void RunGuardTrack(Guard guard, List<Vector2> barriers)
     {
         var encountersBarriers = true;
 
         while (encountersBarriers)
         {
             Vector2 nextObstacle = _outOfBounds;
-            switch (guard.Direction)
+            nextObstacle = guard.Direction switch
             {
-                case Direction.North:
-                    nextObstacle = barriers
-                       .Where(v => v.Y < guard.Position.Y && v.X == guard.Position.X)
-                       .OrderByDescending(v => v.Y)
-                       .FirstOrDefault(_outOfBounds);
-                    break;
-                case Direction.East:
-                    nextObstacle = barriers
-                            .Where(v => v.X > guard.Position.X && v.Y == guard.Position.Y)
-                            .OrderBy(v => v.X)
-                            .FirstOrDefault(_outOfBounds);
-                    break;
-                case Direction.South:
-                    nextObstacle = barriers
-                       .Where(v => v.Y > guard.Position.Y && v.X == guard.Position.X)
-                       .OrderBy(v => v.Y)
-                       .FirstOrDefault(_outOfBounds);
-                    break;
-                case Direction.West:
-                    nextObstacle = barriers
-                            .Where(v => v.X < guard.Position.X && v.Y == guard.Position.Y)
-                            .OrderByDescending(v => v.X)
-                            .FirstOrDefault(_outOfBounds);
-                    break;
-            }
+                Direction.North => barriers.Where(v => v.Y < guard.Position.Y && v.X == guard.Position.X)
+                                           .OrderByDescending(v => v.Y).FirstOrDefault(_outOfBounds),
+                Direction.East => barriers.Where(v => v.X > guard.Position.X && v.Y == guard.Position.Y)
+                                           .OrderBy(v => v.X).FirstOrDefault(_outOfBounds),
+                Direction.South => barriers.Where(v => v.Y > guard.Position.Y && v.X == guard.Position.X)
+                                           .OrderBy(v => v.Y).FirstOrDefault(_outOfBounds),
+                Direction.West => barriers.Where(v => v.X < guard.Position.X && v.Y == guard.Position.Y)
+                                          .OrderByDescending(v => v.X).FirstOrDefault(_outOfBounds),
+                _ => throw new InvalidOperationException("Direction was not cardinal")
+            };
+
             encountersBarriers = nextObstacle != _outOfBounds;
 
             if (encountersBarriers)
@@ -117,7 +105,6 @@ public class Day6 : IDay
                 guard.Turn(outOfField);
             }
         }
-        return guard.Steps.Count;
     }
 
     private class Guard(Vector2 currentPosition)
