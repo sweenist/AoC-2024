@@ -70,7 +70,6 @@ public class Day6 : IDay
 
     private long CountGuardSteps(Guard guard, List<Vector2> barriers)
     {
-        var steps = 0L;
         var encountersBarriers = true;
 
         while (encountersBarriers)
@@ -106,43 +105,85 @@ public class Day6 : IDay
             encountersBarriers = nextObstacle != _outOfBounds;
 
             if (encountersBarriers)
-                steps += guard.Turn(nextObstacle);
+                guard.Turn(nextObstacle);
             else
             {
                 switch (guard.Direction)
                 {
                     case Direction.North:
-                        steps += guard.Turn(new Vector2(guard.Position.X, -1));
+                        guard.Turn(new Vector2(guard.Position.X, -1));
                         break;
                     case Direction.East:
-                        steps += guard.Turn(new Vector2(FieldWidth, guard.Position.Y));
+                        guard.Turn(new Vector2(FieldWidth, guard.Position.Y));
                         break;
                     case Direction.South:
-                        steps += guard.Turn(new Vector2(guard.Position.X, FieldHeight));
+                        guard.Turn(new Vector2(guard.Position.X, FieldHeight));
                         break;
                     case Direction.West:
-                        steps += guard.Turn(new Vector2(-1, guard.Position.Y));
+                        guard.Turn(new Vector2(-1, guard.Position.Y));
                         break;
                 }
             }
         }
-        return steps;
+        Console.WriteLine($"Max Width and Height {FieldWidth}, {FieldHeight}");
+        return guard.Steps.Keys.ToList().Count;
     }
 
     private class Guard(Vector2 currentPosition)
     {
+        private readonly Dictionary<string, int> _steps = new Dictionary<string, int>();
         public Vector2 Position { get; private set; } = currentPosition;
         public Direction Direction { get; private set; }
 
+        public Dictionary<string, int> Steps => _steps;
+
+
         /// <summary>
-        /// Changes guard direction
+        /// Changes guard direction and accounts steps.
         /// </summary>
         /// <param name="obstacle">The position of the barrier encountered.</param>
-        /// <returns>The number of steps the guard took to reach barrier.</returns>
-        public int Turn(Vector2 obstacle)
+        public void Turn(Vector2 obstacle)
         {
-            var steps = (int)(obstacle - Position).Length();
-            Console.WriteLine($"Guard took {steps} steps going {Direction} from {Position} to {obstacle}");
+            switch (Direction)
+            {
+                case Direction.North:
+                    for (var y = Position.Y; y > obstacle.Y; y--)
+                    {
+                        var vector = $"{Position.X},{y}";
+                        if (!Steps.ContainsKey(vector))
+                            Console.WriteLine($"\t{vector}");
+                        Steps[vector] = 1;
+
+                    }
+                    break;
+                case Direction.East:
+                    for (var x = Position.Y; x < obstacle.X; x++)
+                    {
+                        var vector = $"{x},{Position.Y}";
+                        if (!Steps.ContainsKey(vector))
+                            Console.WriteLine($"\t{vector}");
+                        Steps[vector] = 1;
+                    }
+                    break;
+                case Direction.South:
+                    for (var y = Position.Y; y < obstacle.Y; y++)
+                    {
+                        var vector = $"{Position.X},{y}";
+                        if (!Steps.ContainsKey(vector))
+                            Console.WriteLine($"\t{vector}");
+                        Steps[vector] = 1;
+                    }
+                    break;
+                case Direction.West:
+                    for (var x = Position.X; x > obstacle.X; x--)
+                    {
+                        var vector = $"{x},{Position.Y}";
+                        if (!Steps.ContainsKey(vector))
+                            Console.WriteLine($"\t{vector}");
+                        Steps[vector] = 1;
+                    }
+                    break;
+            }
             Position = Direction switch
             {
                 Direction.North => new Vector2(obstacle.X, obstacle.Y + 1),
@@ -152,8 +193,6 @@ public class Day6 : IDay
                 _ => throw new ArgumentOutOfRangeException(nameof(Direction), "Whatever Direction is... it's wrong"),
             };
             Direction = (Direction)(((int)Direction + 1) % 4);
-            Console.WriteLine($"New Direction: {Direction}");
-            return steps;
         }
     }
 }
