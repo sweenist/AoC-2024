@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Numerics;
 using AdventOfCode2024.Enums;
 
@@ -62,7 +61,6 @@ public class Day6 : IDay
     private Vector2 GetGuardStartPosition()
     {
         var rawIndex = string.Join("", _input).ToList().FindIndex(c => c == '^');
-        // Console.WriteLine($"fieldWidth: {fieldWidth}; fieldHeight: {fieldHeight}; rawIndex: {rawIndex}");
         var x = rawIndex % FieldWidth;
         var y = rawIndex / FieldHeight;
         return new Vector2(x, y);
@@ -108,39 +106,30 @@ public class Day6 : IDay
                 guard.Turn(nextObstacle);
             else
             {
-                switch (guard.Direction)
+                var outOfField = guard.Direction switch
                 {
-                    case Direction.North:
-                        guard.Turn(new Vector2(guard.Position.X, -1));
-                        break;
-                    case Direction.East:
-                        guard.Turn(new Vector2(FieldWidth, guard.Position.Y));
-                        break;
-                    case Direction.South:
-                        guard.Turn(new Vector2(guard.Position.X, FieldHeight));
-                        break;
-                    case Direction.West:
-                        guard.Turn(new Vector2(-1, guard.Position.Y));
-                        break;
-                }
+                    Direction.North => new Vector2(guard.Position.X, -1),
+                    Direction.East => new Vector2(FieldWidth, guard.Position.Y),
+                    Direction.South => new Vector2(guard.Position.X, FieldHeight),
+                    Direction.West => new Vector2(-1, guard.Position.Y),
+                    _ => throw new InvalidOperationException("Direction was not cardinal")
+                };
+                guard.Turn(outOfField);
             }
         }
-        Console.WriteLine($"Max Width and Height {FieldWidth}, {FieldHeight}");
-        return guard.Steps.Keys.ToList().Count;
+        return guard.Steps.Count;
     }
 
     private class Guard(Vector2 currentPosition)
     {
-        private readonly Dictionary<string, int> _steps = new Dictionary<string, int>();
+        private readonly HashSet<string> _steps = [];
         public Vector2 Position { get; private set; } = currentPosition;
         public Direction Direction { get; private set; }
 
-        public Dictionary<string, int> Steps => _steps;
+        public HashSet<string> Steps => _steps;
 
 
-        /// <summary>
-        /// Changes guard direction and accounts steps.
-        /// </summary>
+        /// <summary>Changes guard direction and accounts steps.</summary>
         /// <param name="obstacle">The position of the barrier encountered.</param>
         public void Turn(Vector2 obstacle)
         {
@@ -150,37 +139,29 @@ public class Day6 : IDay
                     for (var y = Position.Y; y > obstacle.Y; y--)
                     {
                         var vector = $"{Position.X},{y}";
-                        if (!Steps.ContainsKey(vector))
-                            Console.WriteLine($"\t{vector}");
-                        Steps[vector] = 1;
+                        Steps.Add(vector);
 
                     }
                     break;
                 case Direction.East:
-                    for (var x = Position.Y; x < obstacle.X; x++)
+                    for (var x = Position.X; x < obstacle.X; x++)
                     {
                         var vector = $"{x},{Position.Y}";
-                        if (!Steps.ContainsKey(vector))
-                            Console.WriteLine($"\t{vector}");
-                        Steps[vector] = 1;
+                        Steps.Add(vector);
                     }
                     break;
                 case Direction.South:
                     for (var y = Position.Y; y < obstacle.Y; y++)
                     {
                         var vector = $"{Position.X},{y}";
-                        if (!Steps.ContainsKey(vector))
-                            Console.WriteLine($"\t{vector}");
-                        Steps[vector] = 1;
+                        Steps.Add(vector);
                     }
                     break;
                 case Direction.West:
                     for (var x = Position.X; x > obstacle.X; x--)
                     {
                         var vector = $"{x},{Position.Y}";
-                        if (!Steps.ContainsKey(vector))
-                            Console.WriteLine($"\t{vector}");
-                        Steps[vector] = 1;
+                        Steps.Add(vector);
                     }
                     break;
             }
@@ -190,7 +171,7 @@ public class Day6 : IDay
                 Direction.East => new Vector2(obstacle.X - 1, obstacle.Y),
                 Direction.South => new Vector2(obstacle.X, obstacle.Y - 1),
                 Direction.West => new Vector2(obstacle.X + 1, obstacle.Y),
-                _ => throw new ArgumentOutOfRangeException(nameof(Direction), "Whatever Direction is... it's wrong"),
+                _ => throw new InvalidOperationException("Whatever Direction is... it's wrong"),
             };
             Direction = (Direction)(((int)Direction + 1) % 4);
         }
