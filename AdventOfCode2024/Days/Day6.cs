@@ -1,5 +1,6 @@
 using System.Numerics;
 using AdventOfCode2024.Enums;
+using AdventOfCode2024.Utility;
 
 namespace AdventOfCode2024.Days;
 
@@ -48,6 +49,11 @@ public class Day6 : IDay
         var barriers = _input.SelectMany(SetupFieldRow).ToList();
         var guardStartPosition = GetGuardStartPosition();
         var guard = new Guard(GetGuardStartPosition());
+        RunGuardTrack(guard, barriers);
+
+        var loopingObstacleLocations = GetLoopCausingObstacles(guard, barriers);
+
+        Console.WriteLine($"There are {loopingObstacleLocations} locations for obstacles causing guard loops.");
     }
 
     private int FieldWidth => _input[0].Length;
@@ -107,13 +113,24 @@ public class Day6 : IDay
         }
     }
 
+    private int GetLoopCausingObstacles(Guard guard, List<Vector2> barriers)
+    {
+        return 0;
+    }
+
     private class Guard(Vector2 currentPosition)
     {
-        private readonly HashSet<string> _steps = [];
+        private readonly HashSet<Vector2> _steps = [];
+        private readonly HashSet<Vector3> _pathLocations = [];
+
         public Vector2 Position { get; private set; } = currentPosition;
         public Direction Direction { get; private set; }
 
-        public HashSet<string> Steps => _steps;
+        /// <summary>A unique set of points the guard visits.</summary>
+        public HashSet<Vector2> Steps => _steps;
+
+        /// <summary>The locations(x, y) and direction(z as <seealso cref="Direction" />)</summary>
+        public HashSet<Vector3> Path => _pathLocations;
 
 
         /// <summary>Changes guard direction and accounts steps.</summary>
@@ -125,33 +142,37 @@ public class Day6 : IDay
                 case Direction.North:
                     for (var y = Position.Y; y > obstacle.Y; y--)
                     {
-                        var vector = $"{Position.X},{y}";
-                        Steps.Add(vector);
-
+                        var location = new Vector3(Position.X, y, (int)Direction);
+                        _pathLocations.Add(location);
+                        _steps.Add(location.ToVector2());
                     }
                     break;
                 case Direction.East:
                     for (var x = Position.X; x < obstacle.X; x++)
                     {
-                        var vector = $"{x},{Position.Y}";
-                        Steps.Add(vector);
+                        var location = new Vector3(x, Position.Y, (int)Direction);
+                        _pathLocations.Add(location);
+                        _steps.Add(location.ToVector2());
                     }
                     break;
                 case Direction.South:
                     for (var y = Position.Y; y < obstacle.Y; y++)
                     {
-                        var vector = $"{Position.X},{y}";
-                        Steps.Add(vector);
+                        var location = new Vector3(Position.X, y, (int)Direction);
+                        _pathLocations.Add(location);
+                        _steps.Add(location.ToVector2());
                     }
                     break;
                 case Direction.West:
                     for (var x = Position.X; x > obstacle.X; x--)
                     {
-                        var vector = $"{x},{Position.Y}";
-                        Steps.Add(vector);
+                        var location = new Vector3(x, Position.Y, (int)Direction);
+                        _pathLocations.Add(location);
+                        _steps.Add(location.ToVector2());
                     }
                     break;
             }
+
             Position = Direction switch
             {
                 Direction.North => new Vector2(obstacle.X, obstacle.Y + 1),
