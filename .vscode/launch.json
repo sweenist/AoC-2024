@@ -13,9 +13,9 @@
       "args": [
         "6",
         "2",
-        "true"
+        "tru"
       ],
-      "cwd": "${workspaceFolder}/AdventOfCode2024",
+      "cwd": "${workspaceFolder}",
       "console": "internalConsole",
       "stopAtEntry": false
     },

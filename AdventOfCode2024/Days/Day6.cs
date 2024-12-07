@@ -20,6 +20,16 @@ public class Day6 : IDay
 #.........
 ......#...";
 
+    /*
+        Obstacle locations (example):
+        7,9
+        3,8
+        1,8
+        7,7
+        6,7
+        3,6
+    */
+
     private readonly List<string> _input = [];
     private readonly Vector2 _outOfBounds = new(-1, -1);
 
@@ -102,7 +112,10 @@ public class Day6 : IDay
             encountersBarriers = nextObstacle != _outOfBounds;
 
             if (encountersBarriers)
+            {
                 guard.Turn(nextObstacle);
+                if (guard.IsLooping) return;
+            }
             else
             {
                 var outOfField = guard.Direction switch
@@ -114,7 +127,6 @@ public class Day6 : IDay
                     _ => throw new InvalidOperationException("Direction was not cardinal")
                 };
                 guard.Turn(outOfField);
-                Console.WriteLine($"\tGuard: looping {guard.IsLooping}");
             }
         }
     }
@@ -124,7 +136,7 @@ public class Day6 : IDay
         var pathCopy = new Stack<Vector3>(guard.Path);
         var obstacleCount = 0;
 
-        var obstacles = new List<Vector2>();
+        var obstacles = new HashSet<Vector2>();
 
         while (pathCopy.Count > 1)
         {
@@ -150,8 +162,14 @@ public class Day6 : IDay
                 else
                     throw;
             }
+            if (guard.IsLooping)
+            {
+                obstacleCount++;
+                obstacles.Add(obstacle.ToVector2());
+            }
         }
-        Console.WriteLine($"Obstacles:\n\t{string.Join("\n\t", obstacles)}");
+        // Console.WriteLine($"Obstacles:\n\t{string.Join("\n\t", obstacles)}");
+        Console.WriteLine($"Obstacles count {obstacles.Count}");
 
         return obstacleCount;
     }
@@ -180,19 +198,35 @@ public class Day6 : IDay
             {
                 case Direction.North:
                     for (var y = Position.Y; y > obstacle.Y; y--)
+                    {
                         Traverse(new Vector3(Position.X, y, (int)Direction));
+                        if (IsLooping)
+                            break;
+                    }
                     break;
                 case Direction.East:
                     for (var x = Position.X; x < obstacle.X; x++)
+                    {
                         Traverse(new Vector3(x, Position.Y, (int)Direction));
+                        if (IsLooping)
+                            break;
+                    }
                     break;
                 case Direction.South:
                     for (var y = Position.Y; y < obstacle.Y; y++)
+                    {
                         Traverse(new Vector3(Position.X, y, (int)Direction));
+                        if (IsLooping)
+                            break;
+                    }
                     break;
                 case Direction.West:
                     for (var x = Position.X; x > obstacle.X; x--)
+                    {
                         Traverse(new Vector3(x, Position.Y, (int)Direction));
+                        if (IsLooping)
+                            break;
+                    }
                     break;
             }
 
@@ -234,7 +268,7 @@ public class Day6 : IDay
             if (_pathLocations.Contains(location))
             {
                 IsLooping = true;
-                throw new Exception(LoopMessage); //Dumb. figure out different execution breaking mechanism
+                // throw new Exception(LoopMessage); //Dumb. figure out different execution breaking mechanism
             }
 
             _pathLocations.Add(location);
