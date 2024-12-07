@@ -4,8 +4,11 @@ using AdventOfCode2024.Utility;
 
 namespace AdventOfCode2024.Days;
 
+
 public class Day6 : IDay
 {
+    public const string LoopMessage = "Starting loop";
+
     private string _example = @"....#.....
 .........#
 ..........
@@ -50,6 +53,8 @@ public class Day6 : IDay
         var guardStartPosition = GetGuardStartPosition();
         var guard = new Guard(GetGuardStartPosition());
         RunGuardTrack(guard, barriers);
+
+        // Console.WriteLine($"Distinct Guard trace:\n\t{string.Join("\n\t", guard.Path.Select(v => v.DisplayDirection()))}");
 
         var loopingObstacleLocations = GetLoopCausingObstacles(guard, barriers);
 
@@ -115,7 +120,37 @@ public class Day6 : IDay
 
     private int GetLoopCausingObstacles(Guard guard, List<Vector2> barriers)
     {
-        return 0;
+        var pathCopy = new Stack<Vector3>(guard.Path);
+        var obstacleCount = 0;
+
+        while (pathCopy.Count > 1)
+        {
+            var obstacle = pathCopy.Pop();
+            var guardStart = pathCopy.First();
+            var barriersCopy = barriers.ToList();
+            barriersCopy.Add(obstacle.ToVector2());
+            // Console.WriteLine($"Popped {obstacle.DisplayDirection()}");
+            // Console.WriteLine($"\tGuard at {guardStart.DisplayDirection()}");
+
+            guard.Reposition(guardStart);
+            try
+            {
+                RunGuardTrack(guard, barriersCopy);
+            }
+            catch (Exception e)
+            {
+                if (e.Message.Equals(LoopMessage))
+                    obstacleCount++;
+                else
+                    throw;
+            }
+            finally
+            {
+                Console.WriteLine($"Obstacle at {obstacle.DisplayDirection()} caused a loop.\n\t{guard}");
+            }
+        }
+
+        return obstacleCount;
     }
 
     private class Guard(Vector2 currentPosition)
@@ -141,35 +176,19 @@ public class Day6 : IDay
             {
                 case Direction.North:
                     for (var y = Position.Y; y > obstacle.Y; y--)
-                    {
-                        var location = new Vector3(Position.X, y, (int)Direction);
-                        _pathLocations.Add(location);
-                        _steps.Add(location.ToVector2());
-                    }
+                        Traverse(new Vector3(Position.X, y, (int)Direction));
                     break;
                 case Direction.East:
                     for (var x = Position.X; x < obstacle.X; x++)
-                    {
-                        var location = new Vector3(x, Position.Y, (int)Direction);
-                        _pathLocations.Add(location);
-                        _steps.Add(location.ToVector2());
-                    }
+                        Traverse(new Vector3(x, Position.Y, (int)Direction));
                     break;
                 case Direction.South:
                     for (var y = Position.Y; y < obstacle.Y; y++)
-                    {
-                        var location = new Vector3(Position.X, y, (int)Direction);
-                        _pathLocations.Add(location);
-                        _steps.Add(location.ToVector2());
-                    }
+                        Traverse(new Vector3(Position.X, y, (int)Direction));
                     break;
                 case Direction.West:
                     for (var x = Position.X; x > obstacle.X; x--)
-                    {
-                        var location = new Vector3(x, Position.Y, (int)Direction);
-                        _pathLocations.Add(location);
-                        _steps.Add(location.ToVector2());
-                    }
+                        Traverse(new Vector3(x, Position.Y, (int)Direction));
                     break;
             }
 
@@ -182,6 +201,35 @@ public class Day6 : IDay
                 _ => throw new InvalidOperationException("Whatever Direction is... it's wrong"),
             };
             Direction = (Direction)(((int)Direction + 1) % 4);
+        }
+
+        public void Reposition(Vector3 coordinates)
+        {
+            Position = coordinates.ToVector2();
+            Direction = (Direction)(int)coordinates.Z;
+
+            // Reset the path
+            var revisedPath = Path.ToList();
+            var locationIndex = revisedPath.IndexOf(coordinates);
+            _pathLocations.Clear();
+            _pathLocations.UnionWith(revisedPath.Take(locationIndex));
+
+            // Console.WriteLine($"Update: Last path {_pathLocations.Last().DisplayDirection()}");
+        }
+
+        public override string ToString()
+        {
+            return $"Guard: P:{Position}; D:{Direction}";
+        }
+
+
+        private void Traverse(Vector3 location)
+        {
+            if (_pathLocations.Contains(location))
+                throw new Exception(LoopMessage); //Dumb. figure out different execution breaking mechanism
+
+            _pathLocations.Add(location);
+            _steps.Add(location.ToVector2());
         }
     }
 }
