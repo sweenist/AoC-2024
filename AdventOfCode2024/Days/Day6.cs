@@ -114,6 +114,7 @@ public class Day6 : IDay
                     _ => throw new InvalidOperationException("Direction was not cardinal")
                 };
                 guard.Turn(outOfField);
+                Console.WriteLine($"\tGuard: looping {guard.IsLooping}");
             }
         }
     }
@@ -122,6 +123,8 @@ public class Day6 : IDay
     {
         var pathCopy = new Stack<Vector3>(guard.Path);
         var obstacleCount = 0;
+
+        var obstacles = new List<Vector2>();
 
         while (pathCopy.Count > 1)
         {
@@ -140,15 +143,15 @@ public class Day6 : IDay
             catch (Exception e)
             {
                 if (e.Message.Equals(LoopMessage))
+                {
                     obstacleCount++;
+                    obstacles.Add(obstacle.ToVector2());
+                }
                 else
                     throw;
             }
-            finally
-            {
-                Console.WriteLine($"Obstacle at {obstacle.DisplayDirection()} caused a loop.\n\t{guard}");
-            }
         }
+        Console.WriteLine($"Obstacles:\n\t{string.Join("\n\t", obstacles)}");
 
         return obstacleCount;
     }
@@ -160,6 +163,7 @@ public class Day6 : IDay
 
         public Vector2 Position { get; private set; } = currentPosition;
         public Direction Direction { get; private set; }
+        public bool IsLooping { get; private set; }
 
         /// <summary>A unique set of points the guard visits.</summary>
         public HashSet<Vector2> Steps => _steps;
@@ -214,6 +218,8 @@ public class Day6 : IDay
             _pathLocations.Clear();
             _pathLocations.UnionWith(revisedPath.Take(locationIndex));
 
+            IsLooping = false;
+
             // Console.WriteLine($"Update: Last path {_pathLocations.Last().DisplayDirection()}");
         }
 
@@ -226,7 +232,10 @@ public class Day6 : IDay
         private void Traverse(Vector3 location)
         {
             if (_pathLocations.Contains(location))
+            {
+                IsLooping = true;
                 throw new Exception(LoopMessage); //Dumb. figure out different execution breaking mechanism
+            }
 
             _pathLocations.Add(location);
             _steps.Add(location.ToVector2());
