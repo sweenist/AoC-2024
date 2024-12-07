@@ -57,6 +57,7 @@ public class Day6 : IDay
         Console.WriteLine($"The guard took {guard.Steps.Count} steps.");
     }
 
+    //1740
     public void Part2()
     {
         var barriers = _input.SelectMany(SetupFieldRow).ToList();
@@ -140,32 +141,24 @@ public class Day6 : IDay
 
         while (pathCopy.Count > 1)
         {
-            var obstacle = pathCopy.Pop();
+            var obstacle = pathCopy.Pop().ToVector2();
             var guardStart = pathCopy.First();
+            if (obstacle == guardStart.ToVector2())
+            {
+                // Console.WriteLine($"Overlapping: {obstacle}, {guardStart}");
+                continue;
+            }
             var barriersCopy = barriers.ToList();
-            barriersCopy.Add(obstacle.ToVector2());
-            // Console.WriteLine($"Popped {obstacle.DisplayDirection()}");
+            barriersCopy.Add(obstacle);
+            // Console.WriteLine($"Popped obstacle {obstacle}");
             // Console.WriteLine($"\tGuard at {guardStart.DisplayDirection()}");
 
             guard.Reposition(guardStart);
-            try
-            {
-                RunGuardTrack(guard, barriersCopy);
-            }
-            catch (Exception e)
-            {
-                if (e.Message.Equals(LoopMessage))
-                {
-                    obstacleCount++;
-                    obstacles.Add(obstacle.ToVector2());
-                }
-                else
-                    throw;
-            }
-            if (guard.IsLooping)
+            RunGuardTrack(guard, barriersCopy);
+
+            if (guard.IsLooping && obstacles.Add(obstacle))
             {
                 obstacleCount++;
-                obstacles.Add(obstacle.ToVector2());
             }
         }
         // Console.WriteLine($"Obstacles:\n\t{string.Join("\n\t", obstacles)}");
@@ -174,12 +167,19 @@ public class Day6 : IDay
         return obstacleCount;
     }
 
-    private class Guard(Vector2 currentPosition)
+    private class Guard
     {
         private readonly HashSet<Vector2> _steps = [];
         private readonly HashSet<Vector3> _pathLocations = [];
+        private readonly Vector2 _startPosition;
 
-        public Vector2 Position { get; private set; } = currentPosition;
+        public Guard(Vector2 startPosition)
+        {
+            Position = startPosition;
+            _startPosition = startPosition;
+        }
+
+        public Vector2 Position { get; private set; }
         public Direction Direction { get; private set; }
         public bool IsLooping { get; private set; }
 
@@ -243,18 +243,12 @@ public class Day6 : IDay
 
         public void Reposition(Vector3 coordinates)
         {
-            Position = coordinates.ToVector2();
-            Direction = (Direction)(int)coordinates.Z;
+            Position = _startPosition;
+            Direction = Direction.North;
 
-            // Reset the path
-            var revisedPath = Path.ToList();
-            var locationIndex = revisedPath.IndexOf(coordinates);
             _pathLocations.Clear();
-            _pathLocations.UnionWith(revisedPath.Take(locationIndex));
 
             IsLooping = false;
-
-            // Console.WriteLine($"Update: Last path {_pathLocations.Last().DisplayDirection()}");
         }
 
         public override string ToString()
@@ -265,13 +259,9 @@ public class Day6 : IDay
 
         private void Traverse(Vector3 location)
         {
-            if (_pathLocations.Contains(location))
-            {
+            if (!_pathLocations.Add(location))
                 IsLooping = true;
-                // throw new Exception(LoopMessage); //Dumb. figure out different execution breaking mechanism
-            }
 
-            _pathLocations.Add(location);
             _steps.Add(location.ToVector2());
         }
     }
