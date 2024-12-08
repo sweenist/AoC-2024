@@ -65,8 +65,6 @@ public class Day6 : IDay
         var guard = new Guard(GetGuardStartPosition());
         RunGuardTrack(guard, barriers);
 
-        // Console.WriteLine($"Distinct Guard trace:\n\t{string.Join("\n\t", guard.Path.Select(v => v.DisplayDirection()))}");
-
         var loopingObstacleLocations = GetLoopCausingObstacles(guard, barriers);
 
         Console.WriteLine($"There are {loopingObstacleLocations} locations for obstacles causing guard loops.");
@@ -145,13 +143,10 @@ public class Day6 : IDay
             var guardStart = pathCopy.First();
             if (obstacle == guardStart.ToVector2())
             {
-                // Console.WriteLine($"Overlapping: {obstacle}, {guardStart}");
                 continue;
             }
             var barriersCopy = barriers.ToList();
             barriersCopy.Add(obstacle);
-            // Console.WriteLine($"Popped obstacle {obstacle}");
-            // Console.WriteLine($"\tGuard at {guardStart.DisplayDirection()}");
 
             guard.Reposition(guardStart);
             RunGuardTrack(guard, barriersCopy);
@@ -160,9 +155,7 @@ public class Day6 : IDay
             {
                 obstacleCount++;
             }
-        }
-        // Console.WriteLine($"Obstacles:\n\t{string.Join("\n\t", obstacles)}");
-        Console.WriteLine($"Obstacles count {obstacles.Count}");
+        };
 
         return obstacleCount;
     }
