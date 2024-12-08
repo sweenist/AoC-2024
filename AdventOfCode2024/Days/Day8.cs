@@ -52,6 +52,7 @@ public class Day8 : IDay
     public void Part2()
     {
         var antiNodes = IdentifyAntiNodes(shouldResonate: true);
+        Print(antiNodes);
 
         Console.WriteLine($"Found {antiNodes.Count} distinct anti-nodes in map.");
     }
