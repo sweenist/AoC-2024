@@ -11,6 +11,6 @@ public class Options
     [Option('e', "useExample")]
     public bool UseExample { get; set; }
 
-    [Option('p', "profile")]
+    [Option("profile")]
     public bool UseProfiler { get; set; }
 }

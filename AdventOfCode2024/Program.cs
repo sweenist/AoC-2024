@@ -1,5 +1,5 @@
 ﻿using AdventOfCode2024.Days;
-
+using AdventOfCode2024.Utility;
 using CommandLine;
 
 Parser.Default.ParseArguments<Options>(args).WithParsed(opt =>
@@ -33,12 +33,15 @@ Recieved args: {string.Join(' ', args)}
     switch (opt.Part)
     {
         case 1:
-            dayInstance.Part1();
+            if (opt.UseProfiler) Diagnostics.Profile(dayInstance.Part1);
+            else dayInstance.Part1();
             break;
         case 2:
-            dayInstance.Part2();
+            if (opt.UseProfiler) Diagnostics.Profile(dayInstance.Part2);
+            else dayInstance.Part2();
             break;
         default:
+
             throw new Exception($"Unexpected error occurred {opt}");
     }
     Console.WriteLine(new string('-', 80));
