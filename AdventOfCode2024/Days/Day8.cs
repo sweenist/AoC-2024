@@ -52,9 +52,8 @@ public class Day8 : IDay
     public void Part2()
     {
         var antiNodes = IdentifyAntiNodes(shouldResonate: true);
-        Print(antiNodes);
 
-        Console.WriteLine($"Found {antiNodes.Count} distinct anti-nodes in map.");
+        Console.WriteLine($"Found {antiNodes.Count} resonating anti-nodes in map.");
     }
 
     private static Dictionary<char, IEnumerable<PointPair>> ParseInputs(List<string> inputs)
@@ -83,6 +82,11 @@ public class Day8 : IDay
 
         var slope = pair.GetSlopeDistance();
         var (Back, Forward, A, B) = (true, true, pair.A, pair.B);
+        if (resonate)
+        {
+            yield return A;
+            yield return B;
+        }
 
         while (Back || Forward)
         {
@@ -97,6 +101,8 @@ public class Day8 : IDay
         }
     }
 
+    /// <summary>Prints the map of nodes for debugging.</summary>
+    /// <param name="antiNodes">The nodes to draw on map.</param>
     private void Print(IEnumerable<Point> antiNodes)
     {
         var s = new StringBuilder();
