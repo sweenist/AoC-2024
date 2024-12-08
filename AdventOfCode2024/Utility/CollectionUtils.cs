@@ -46,4 +46,18 @@ public static class CollectionUtils
         }
         return newNodes;//.Where(n => n <= max);
     }
+
+    public static IEnumerable<PointPair> Pairwise(this IEnumerable<Point> points)
+    {
+        var pairs = new List<PointPair>();
+        var p = points.ToList();
+
+        for (var i = 0; i < p.Count; i++)
+        {
+            var left = p.Skip(i + 1);
+            if (left.Any())
+                pairs.AddRange(left.Select(x => new PointPair(p[i], x)));
+        }
+        return pairs;
+    }
 }
