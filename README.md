@@ -40,7 +40,3 @@ Day 25 &nbsp;⚫
 
 ----
 
-**Confession**: I abused reflection so I could arbitrarily call my code by day and part.
-
-----
-
