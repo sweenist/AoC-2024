@@ -32,8 +32,7 @@ public class Day9 : IDay
 
     public void Part2()
     {
-        var fileIds = ParseDiskSpace().ToList();
-        var compressed = CompressFiles(fileIds);
+        var compressed = CompressFiles();
         var checkSum = compressed.Select((x, i) => x == -1 ? 0L : (long)x * i).Sum();
 
         Console.WriteLine($"Disk checksum after file moving is {checkSum}");
@@ -42,16 +41,12 @@ public class Day9 : IDay
     private IEnumerable<int> ParseDiskSpace()
     {
         var id = 0;
-        IEnumerable<int> ParseBlock(string seg, int index)
+        return _input.SelectMany((x, i) =>
         {
-            var length = int.Parse(seg);
-            var isFreeSpace = index % 2 == 1;
-            var result = Enumerable.Repeat(isFreeSpace ? -1 : id, length);
-            if (!isFreeSpace)
-                id++;
+            var length = int.Parse(x.ToString());
+            var result = Enumerable.Repeat(id++ % 2 == 1 ? -1 : id / 2, length);
             return result;
-        }
-        return _input.SelectMany((x, i) => ParseBlock(x.ToString(), i));
+        });
     }
 
     private static IEnumerable<int> CompressBlocks(IEnumerable<int> diskBlocks)
@@ -75,16 +70,22 @@ public class Day9 : IDay
         return blocks;
     }
 
-    private static IEnumerable<int> CompressFiles(IEnumerable<int> diskBlocks)
+    private IEnumerable<(int Id, int Index, int Length)> UncompressDiskSpace()
     {
-        var blocks = diskBlocks.ToList();
-        var allocations = blocks.Zip(Enumerable.Range(0, blocks.Count), Tuple.Create)
-            .Where((x, i) => i == 0 || blocks[i - 1] != x.Item1).ToList();
-        var chunks = allocations
-            .Select((x, i) => i == allocations.Count - 1
-                ? (Id: x.Item1, Index: x.Item2, Length: blocks.Count - x.Item2)
-                : (Id: x.Item1, Index: x.Item2, Length: allocations[i + 1].Item2 - x.Item2)).ToList();
-        var fileChunks = new Queue<(int Id, int Index, int Length)>(chunks.Where(t => t.Id != -1).OrderByDescending(t => t.Index).ToList());
+        var index = 0;
+        return _input.Select((x, i) =>
+        {
+            var length = int.Parse(x.ToString());
+            var returnValue = (Id: i % 2 == 1 ? -1 : i / 2, Index: index, Length: length);
+            index += length;
+            return returnValue;
+        });
+    }
+
+    private IEnumerable<int> CompressFiles()
+    {
+        var chunks = UncompressDiskSpace().ToList();
+        var fileChunks = new Queue<(int Id, int Index, int Length)>([.. chunks.Where(t => t.Id != -1).OrderByDescending(t => t.Index)]);
 
         var notFound = (Id: -2, Index: 0, Length: 0);
         while (fileChunks.Count > 0)
