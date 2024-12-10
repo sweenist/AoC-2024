@@ -31,7 +31,7 @@ public class Day10 : IDay
             _input.AddRange(sr.ReadToEnd().Split('\n'));
         }
         _map = _input.Select((x, i) =>
-                        x.Select((c, j) => new KeyValuePair<int, Point>(int.Parse(c.ToString()), new Point(j, i)))
+                        x.TrimEnd().Select((c, j) => new KeyValuePair<int, Point>(int.Parse(c.ToString()), new Point(j, i)))
                         .ToList())
                     .ToList();
     }
@@ -74,7 +74,7 @@ public class Day10 : IDay
 
     private IEnumerable<KeyValuePair<int, Point>> AdvanceTrail(Point trailSegment, int nextSegment)
     {
-        foreach (var direction in Point.CardinalPoints)
+        foreach (var direction in Vector.CardinalPoints)
         {
             var searchPoint = trailSegment + direction;
             if (searchPoint.X < 0 || searchPoint.X == _map[0].Count || searchPoint.Y < 0 || searchPoint.Y == _map.Count)
