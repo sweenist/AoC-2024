@@ -47,7 +47,11 @@ public class Day10 : IDay
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var trailHeads = _map.SelectMany(x => x.Where(k => k.Key == 0)).ToList();
+
+        var result = TraverseDistinct(trailHeads);
+
+        Console.WriteLine($"There are {result} distinct trailheads");
     }
 
     private long Traverse(List<KeyValuePair<int, Point>> trailMarkers)
@@ -56,9 +60,16 @@ public class Day10 : IDay
         foreach (var point in trailMarkers.Select(x => x.Value))
             nextMarkers.Add(new HashSet<KeyValuePair<int, Point>>(AdvanceTrail(point, 1).ToList()));
 
-        // foreach (var item in nextMarkers)
-        //     Console.WriteLine($"trails:\n\t{string.Join("\n\t", item.Select(x => $"{x.Key}, {x.Value}"))}");
-        return nextMarkers.SelectMany(x => x.Where(k => k.Key == 9)).Count();
+        return nextMarkers.SelectMany(x => x).Count();
+    }
+
+    private long TraverseDistinct(List<KeyValuePair<int, Point>> trailMarkers)
+    {
+        var nextMarkers = new List<List<KeyValuePair<int, Point>>>();
+        foreach (var point in trailMarkers.Select(x => x.Value))
+            nextMarkers.Add(AdvanceTrail(point, 1).ToList());
+
+        return nextMarkers.SelectMany(x => x).Count();
     }
 
     private IEnumerable<KeyValuePair<int, Point>> AdvanceTrail(Point trailSegment, int nextSegment)
