@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace AdventOfCode2024.Utility;
 
-public record Point(int X, int Y)
+public struct Point(int X, int Y)
 {
     public int X { get; set; } = X;
     public int Y { get; set; } = Y;
@@ -20,19 +22,35 @@ public record Point(int X, int Y)
 /// <param name="X">Left/Right component.</param>
 /// <param name="Y">Up/Down component.</param>
 /// <param name="Z">(Optional) Depth component.</param>
-public record Vector(int X, int Y, int? Z = null)
+public struct Vector(int X, int Y, int? Z = null)
 {
     public int X { get; set; } = X;
     public int Y { get; set; } = Y;
     public int? Z { get; set; } = Z;
 
+    public static Vector Zero => new(0, 0);
+
     public static Vector North => new(0, -1);
     public static Vector East => new(1, 0);
     public static Vector South => new(0, 1);
     public static Vector West => new(-1, 0);
-    
-    public static List<Vector> CardinalPoints => [North, East, South, West];
 
+    public static Vector NorthEast => North + East;
+    public static Vector NorthWest => North + West;
+    public static Vector SouthEast => South + East;
+    public static Vector SouthWest => South + West;
+
+    public static List<Vector> CardinalPoints => [North, East, South, West];
+    public static List<Vector> OrdinalPoints => [NorthEast, SouthEast, SouthWest, NorthWest];
+    public static List<Vector> OmniDirections => CardinalPoints.Zip(OrdinalPoints, (f, s) => new[] { f, s })
+                                                               .SelectMany(x => x)
+                                                               .ToList();
+
+    public static Vector operator +(Vector source, Vector target) => new(source.X + target.X, source.Y + target.Y);
+    public bool Equals(Vector other)
+    {
+        return X == other.X && Y == other.Y && Z == other.Z;
+    }
 }
 
 public record PointPair(Point A, Point B)
