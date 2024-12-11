@@ -4,7 +4,7 @@ namespace AdventOfCode2024.Days;
 
 public class Day11 : IDay
 {
-    private string _example = "0";//@"125 17";
+    private string _example = @"125 17";
 
     private readonly List<string> _input = [];
 
@@ -36,12 +36,19 @@ public class Day11 : IDay
         var accum = 0L;
         var stones = _input.Select(long.Parse).ToList();
         // var result = Chunk(stones, 75).Select(c => c.Count).Sum();
-        var result = Blink(stones, 25);
+        var result = Blink(stones, 40);
         foreach (var stone in result)
         {
-            accum += Chunk(stone, 50);
+            try
+            {
+                accum += Chunk(stone, 35);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"stone: {stone}; encountered {ex.Message}");
+            }
         }
-        Console.WriteLine($"The stone line is {result} long after 75 blinks!");
+        Console.WriteLine($"The stone line is {accum} long after 75 blinks!");
     }
 
     private static List<long> Blink(List<long> stones, int blinks)
@@ -56,9 +63,9 @@ public class Day11 : IDay
         return stones;
     }
 
-    private static long Chunk(List<long> stones, int blinks)
+    private static long Chunk(long stone, int blinks)
     {
-        var chunks = stones.Select(x => new[] { x }.ToList()).ToList();
+        var chunks = new[] { new[] { stone }.ToList() }.ToList();
         while (blinks > 0)
         {
             --blinks;
@@ -67,7 +74,9 @@ public class Day11 : IDay
                 chunks[i] = chunks[i].Blink().ToList();
             }
             if (blinks % 10 == 0)
+            {
                 chunks = chunks.SelectMany(x => new[] { x.Take(x.Count / 2).ToList(), x.Skip(x.Count / 2).ToList() }.ToList()).ToList();
+            }
 
             // Console.WriteLine($"Stones: {string.Join(' ', stones)}");
         }
