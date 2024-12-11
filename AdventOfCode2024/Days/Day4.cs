@@ -83,36 +83,14 @@ MXMXAXMASX";
     public void Part2()
     {
         var totalXmas = 0;
-        var offsets = new List<Vector>{
-            new(-1,-1), //top-left
-            new(1,-1),  //top-right
-            new(-1,1),  //bottom-left
-            new(1,1),   //bottom-right
-        };
+        _paraVectors = Vector.OrdinalPoints;
 
-        var grid = new Boundary
-        {
-            Height = _input.Count,
-            Width = _input[0].Length,
-        };
-
-        void Xtreme(Point current)
-        {
-            var letters = offsets.Select(x => GetLetter(current + x)).ToList();
-            if (letters.Count(x => x == 'M') != 2
-                || letters.Count(x => x == 'S') != 2
-                || letters.First().Equals(letters.Last()))
-                return;
-
-            totalXmas++;
-        }
-
-        for (var y = 1; y < grid.BoundY; y++)
-            for (var x = 1; x < grid.BoundX; x++)
+        for (var y = 1; y < _bounds.BoundY; y++)
+            for (var x = 1; x < _bounds.BoundX; x++)
             {
                 var currentPosition = new Point(x, y);
                 if (GetLetter(currentPosition) == 'A')
-                    Xtreme(currentPosition);
+                    totalXmas += Xtreme(currentPosition);
             }
         Console.WriteLine($"Found a total of {totalXmas} X-MASes");
     }
@@ -126,6 +104,16 @@ MXMXAXMASX";
         if (currentPosition.Y == _bounds.BoundY) validVectors = validVectors.Where(v => v.Y != 1).ToList();
 
         return validVectors;
+    }
+
+    private int Xtreme(Point current)
+    {
+        var letters = _paraVectors.Select(x => GetLetter(current + x)).ToList();
+        return (letters.Count(x => x == 'M') != 2
+                || letters.Count(x => x == 'S') != 2
+                || letters.First().Equals(letters.Last()))
+            ? 0
+            : 1;
     }
 
     private char GetLetter(Point pos)

@@ -41,15 +41,20 @@ public struct Vector(int X, int Y, int? Z = null)
     public static Vector SouthWest => South + West;
 
     public static List<Vector> CardinalPoints => [North, East, South, West];
-    public static List<Vector> OrdinalPoints => [NorthEast, SouthEast, SouthWest, NorthWest];
+    public static List<Vector> OrdinalPoints => [NorthWest, NorthEast, SouthWest, SouthEast];
     public static List<Vector> OmniDirections => CardinalPoints.Zip(OrdinalPoints, (f, s) => new[] { f, s })
                                                                .SelectMany(x => x)
                                                                .ToList();
 
     public static Vector operator +(Vector source, Vector target) => new(source.X + target.X, source.Y + target.Y);
-    public bool Equals(Vector other)
+
+    public readonly bool Equals(Vector other)
     {
         return X == other.X && Y == other.Y && Z == other.Z;
+    }
+    public override readonly string ToString()
+    {
+        return $"Vector:<{X}, {Y}{(Z.HasValue ? $", {Z}" : "")}>";
     }
 }
 
