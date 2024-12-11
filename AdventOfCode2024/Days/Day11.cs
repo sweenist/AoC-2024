@@ -26,29 +26,17 @@ public class Day11 : IDay
     public void Part1()
     {
         var stones = _input.Select(long.Parse).ToList();
-        var result = Blink(stones, 25);
+        var result = Blink(stones, 10);
 
         Console.WriteLine($"The stone line is {result.Count} long after 25 blinks!");
     }
 
     public void Part2()
     {
-        var accum = 0L;
+        var stoneValues = new Dictionary<long, long>();
         var stones = _input.Select(long.Parse).ToList();
-        // var result = Chunk(stones, 75).Select(c => c.Count).Sum();
-        var result = Blink(stones, 40);
-        foreach (var stone in result)
-        {
-            try
-            {
-                accum += Chunk(stone, 35);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"stone: {stone}; encountered {ex.Message}");
-            }
-        }
-        Console.WriteLine($"The stone line is {accum} long after 75 blinks!");
+        var result = Blink2(stones, 10);
+        Console.WriteLine($"The stone line is {result} long after 75 blinks!");
     }
 
     private static List<long> Blink(List<long> stones, int blinks)
@@ -63,23 +51,35 @@ public class Day11 : IDay
         return stones;
     }
 
-    private static long Chunk(long stone, int blinks)
+    private static long Blink2(List<long> stones, int blinks)
     {
-        var chunks = new[] { new[] { stone }.ToList() }.ToList();
+        var stoneValues = new Dictionary<long, long>();
         while (blinks > 0)
         {
             --blinks;
-            for (var i = 0; i < chunks.Count; i++)
+            foreach (var stone in stones.Blink().ToList())
             {
-                chunks[i] = chunks[i].Blink().ToList();
+                switch (stone)
+                {
+                    case 0:
+                        if (!stoneValues.TryAdd(1L, 1L)) stoneValues[1L]++;
+                        break;
+                    case var x when x.ToString().Length % 2 == 0:
+                        var word = x.ToString();
+                        var key1 = long.Parse(word[..(word.Length / 2)]);
+                        var key2 = long.Parse(word[(word.Length / 2)..]);
+                        if (!stoneValues.TryAdd(key1, 1L)) stoneValues[key1]++;
+                        if (!stoneValues.TryAdd(key2, 1L)) stoneValues[key2]++;
+                        break;
+                    default:
+                        var key = stone * 2024;
+                        if (!stoneValues.TryAdd(key, 1L)) stoneValues[key]++;
+                        break;
+                }
             }
-            if (blinks % 10 == 0)
-            {
-                chunks = chunks.SelectMany(x => new[] { x.Take(x.Count / 2).ToList(), x.Skip(x.Count / 2).ToList() }.ToList()).ToList();
-            }
-
-            // Console.WriteLine($"Stones: {string.Join(' ', stones)}");
+            // Console.WriteLine($"Stones: {string.Join(' ', stones)} Length: {stones.Count}; Zeroes: {stones.Where(x => x == 0).Count()}");
         }
-        return chunks.Select(c => c.Count).Sum();
+        // Console.WriteLine($"Hashing: {string.Join(',', stoneValues.Select(d => $"{d.Key}: {d.Value}"))}");
+        return stoneValues.Values.Sum();
     }
 }
