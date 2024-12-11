@@ -1,4 +1,4 @@
-using System.Numerics;
+using AdventOfCode2024.Utility;
 
 namespace AdventOfCode2024.Days;
 
@@ -16,6 +16,8 @@ MAMMMXMMMM
 MXMXAXMASX";
 
     private readonly List<string> _input = [];
+    private readonly Boundary _bounds;
+    private List<Vector> _paraVectors = [];
 
     public Day4(bool useExample = false)
     {
@@ -23,46 +25,37 @@ MXMXAXMASX";
         {
             Console.WriteLine("Using the example data");
             _input.AddRange(_example.Split('\n'));
-            return;
         }
-        var inputFile = $"inputData/{GetType().Name}.txt";
-        using var sr = new StreamReader(inputFile);
-        _input.AddRange(sr.ReadToEnd().Split('\n'));
-    }
-
-    public void Part1()
-    {
-        const string WORD = "XMAS";
-        var offsets = new Dictionary<string, Vector2>{
-            {"LEFT", new Vector2(1,0) },
-            {"RIGHT", new Vector2(-1,0) },
-            {"DOWN", new Vector2(0,1) },
-            {"UP", new Vector2(0,-1) },
-            {"LEFTDOWN", new Vector2(1,1) },
-            {"LEFTUP", new Vector2(1,-1) },
-            {"RIGHTDOWN", new Vector2(-1,1) },
-            {"RIGHTUP", new Vector2(-1,-1) },
-        };
-
-        var totalFound = 0;
-        var grid = new Grid
+        else
+        {
+            var inputFile = $"inputData/{GetType().Name}.txt";
+            using var sr = new StreamReader(inputFile);
+            _input.AddRange(sr.ReadToEnd().Split('\n'));
+        }
+        _bounds = new Boundary
         {
             Height = _input.Count,
             Width = _input[0].Length,
         };
+    }
 
+    public void Part1()
+    {
+        _paraVectors = Vector.OmniDirections;
+        const string WORD = "XMAS";
+        var totalFound = 0;
 
-        void Traverse(Vector2 current, int wordIndex, string trajectory = "")
+        void Traverse(Point current, int wordIndex, Vector? trajectory = null)
         {
-            var keys = GetKeys([.. offsets.Keys], current, grid);
-            var foundKeys = keys.Where(k => (k == trajectory || trajectory == string.Empty)
-                                        && GetLetter(offsets[k] + current) == WORD[wordIndex])
+            var adjacentDirections = GetSurrounding(current);
+            var eligibleVectors = adjacentDirections.Where(k => (trajectory is null || k.Equals(trajectory.Value))
+                                        && GetLetter(current + k) == WORD[wordIndex])
                                 .ToList();
 
-            if (foundKeys.Count == 0)
+            if (eligibleVectors.Count == 0)
                 return;
 
-            foreach (var key in foundKeys)
+            foreach (var vector in eligibleVectors)
             {
                 if (wordIndex == WORD.Length - 1)
                 {
@@ -70,15 +63,15 @@ MXMXAXMASX";
                     continue;
                 }
 
-                var nextPosition = offsets[key] + current;
-                Traverse(nextPosition, wordIndex + 1, key);
+                var nextPosition = current + vector;
+                Traverse(nextPosition, wordIndex + 1, vector);
             }
         }
 
-        for (var y = 0; y < grid.Width; y++)
-            for (var x = 0; x < grid.Height; x++)
+        for (var y = 0; y < _bounds.Width; y++)
+            for (var x = 0; x < _bounds.Height; x++)
             {
-                var currentPosition = new Vector2(x, y);
+                var currentPosition = new Point(x, y);
                 if (GetLetter(currentPosition) != WORD[0])
                     continue;
                 Traverse(currentPosition, 1);
@@ -90,22 +83,22 @@ MXMXAXMASX";
     public void Part2()
     {
         var totalXmas = 0;
-        var offsets = new List<Vector2>{
+        var offsets = new List<Vector>{
             new(-1,-1), //top-left
             new(1,-1),  //top-right
             new(-1,1),  //bottom-left
             new(1,1),   //bottom-right
         };
 
-        var grid = new Grid
+        var grid = new Boundary
         {
             Height = _input.Count,
             Width = _input[0].Length,
         };
 
-        void Xtreme(Vector2 current)
+        void Xtreme(Point current)
         {
-            var letters = offsets.Select(x => GetLetter(x + current)).ToList();
+            var letters = offsets.Select(x => GetLetter(current + x)).ToList();
             if (letters.Count(x => x == 'M') != 2
                 || letters.Count(x => x == 'S') != 2
                 || letters.First().Equals(letters.Last()))
@@ -117,28 +110,30 @@ MXMXAXMASX";
         for (var y = 1; y < grid.BoundY; y++)
             for (var x = 1; x < grid.BoundX; x++)
             {
-                var currentPosition = new Vector2(x, y);
+                var currentPosition = new Point(x, y);
                 if (GetLetter(currentPosition) == 'A')
                     Xtreme(currentPosition);
             }
         Console.WriteLine($"Found a total of {totalXmas} X-MASes");
     }
 
-    private static List<string> GetKeys(List<string> keys, Vector2 pos, Grid grid)
+    private List<Vector> GetSurrounding(Point currentPosition)
     {
-        if (pos.X == 0) keys = keys.Where(k => !k.StartsWith("RIGHT")).ToList();
-        if (pos.Y == 0) keys = keys.Where(k => !k.EndsWith("UP")).ToList();
-        if (pos.X == grid.BoundX) keys = keys.Where(k => !k.StartsWith("LEFT")).ToList();
-        if (pos.Y == grid.BoundY) keys = keys.Where(k => !k.EndsWith("DOWN")).ToList();
-        return keys;
+        var validVectors = _paraVectors.ToList();
+        if (currentPosition.X == 0) validVectors = validVectors.Where(v => v.X != -1).ToList();
+        if (currentPosition.Y == 0) validVectors = validVectors.Where(v => v.Y != -1).ToList();
+        if (currentPosition.X == _bounds.BoundX) validVectors = validVectors.Where(v => v.X != 1).ToList();
+        if (currentPosition.Y == _bounds.BoundY) validVectors = validVectors.Where(v => v.Y != 1).ToList();
+
+        return validVectors;
     }
 
-    private char GetLetter(Vector2 pos)
+    private char GetLetter(Point pos)
     {
-        return _input[(int)pos.Y][(int)pos.X];
+        return _input[pos.Y][pos.X];
     }
 
-    private record Grid
+    private record Boundary
     {
         public int Height { get; set; }
         public int Width { get; set; }
