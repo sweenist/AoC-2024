@@ -47,9 +47,9 @@ public class Day6 : IDay
     public void Part1()
     {
         var barriers = _input.SelectMany(SetupFieldRow).ToList();
-
         var guardStartPosition = GetGuardStartPosition();
         var guard = new Guard(GetGuardStartPosition());
+
         RunGuardTrack(guard, barriers);
 
         Console.WriteLine($"The guard took {guard.Steps.Count} steps.");
@@ -168,6 +168,7 @@ public class Day6 : IDay
         {
             Position = startPosition;
             _startPosition = startPosition;
+            Direction = Vector.North;
         }
 
         public Point Position { get; private set; }
@@ -226,7 +227,7 @@ public class Day6 : IDay
                 Position = obstacle + Vector.East;
             }
 
-            Direction.Clockwise();
+            Direction = Vector.Clockwise(Direction);
         }
 
         public void Reposition()
@@ -241,7 +242,7 @@ public class Day6 : IDay
 
         public override string ToString()
         {
-            return $"Guard: P:{Position}; D:{Direction}";
+            return $"Guard: P:{Position}; D:{Direction}; Looping {IsLooping}";
         }
 
 

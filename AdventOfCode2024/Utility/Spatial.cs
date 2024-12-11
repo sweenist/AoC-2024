@@ -71,13 +71,7 @@ public struct Vector(int X, int Y, int? Z = null)
     public static bool operator ==(Vector a, Vector b) => a.X == b.X && a.Y == b.Y;
     public static bool operator !=(Vector a, Vector b) => a.X != b.X || a.Y != b.Y;
 
-    public void Clockwise()
-    {
-        var x = -Y;
-        var y = X;
-        X = x;
-        Y = y;
-    }
+    public static Vector Clockwise(Vector v) => new(-v.Y, v.X);
 
     public override bool Equals([NotNullWhen(true)] object? obj)
     {
