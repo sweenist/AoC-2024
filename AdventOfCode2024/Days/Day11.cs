@@ -39,7 +39,7 @@ public class Day11 : IDay
     public void Part2()
     {
         var blinks = 75;
-        var result = _input.Select(x => Blink(long.Parse(x), blinks)).Sum();
+        var result = Blink182(_input.Select(long.Parse).ToArray(), blinks);
         Console.WriteLine($"The stone line is {result} long after {blinks} blinks!");
     }
 
@@ -67,6 +67,50 @@ public class Day11 : IDay
 
         CollectionsMarshal.GetValueRefOrAddDefault(_cache, new StonedBlinks(stone, nextBlink), out bool _) = result;
         return result;
+    }
+
+    private static long Blink182(long[] stones, int blinks)
+    {
+        var seededStones = stones.ToDictionary(x => x, x => 1L);
+
+        for (var i = 0; i < blinks; i++)
+        {
+            AllTheSmallThings(seededStones);
+        }
+
+        return seededStones.Sum(x => x.Value);
+    }
+
+    private static void AllTheSmallThings(Dictionary<long, long> stones)
+    {
+        static bool EvenDigits(long inVar, out long outVar)
+        {
+            var value = EvenNumberLengths(inVar);
+            outVar = value / 2;
+            return value != 1;
+        }
+
+        long SplitEven(long value, long digits, long count)
+        {
+            var left = value / TenPowers(digits);
+            var right = value % TenPowers(digits);
+            CollectionsMarshal.GetValueRefOrAddDefault(stones, left, out var _) += count;
+            CollectionsMarshal.GetValueRefOrAddDefault(stones, right, out var _) += count;
+            return count;
+        }
+
+        var stoneArray = stones.ToArray();
+        stones.Clear();
+
+        foreach (var (value, count) in stoneArray)
+        {
+            var _ = value switch
+            {
+                0 => CollectionsMarshal.GetValueRefOrAddDefault(stones, 1L, out var _) += count,
+                var x when EvenDigits(x, out var digits) => SplitEven(x, digits, count),
+                _ => CollectionsMarshal.GetValueRefOrAddDefault(stones, value * 2024, out var _) += count,
+            };
+        }
     }
 
     private static long TenPowers(long power) => power switch
