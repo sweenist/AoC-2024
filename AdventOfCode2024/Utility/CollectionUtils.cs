@@ -60,25 +60,4 @@ public static class CollectionUtils
         }
         return pairs;
     }
-
-    public static IEnumerable<long> Blink(this IEnumerable<long> stones)
-    {
-        using var e = stones.GetEnumerator();
-
-        while (e.MoveNext())
-            switch (e.Current)
-            {
-                case 0:
-                    yield return 1;
-                    break;
-                case var x when x.ToString().Length % 2 == 0:
-                    var word = x.ToString();
-                    yield return long.Parse(word[..(word.Length / 2)]);
-                    yield return long.Parse(word[(word.Length / 2)..]);
-                    break;
-                default:
-                    yield return e.Current * 2024;
-                    break;
-            }
-    }
 }

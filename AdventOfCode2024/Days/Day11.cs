@@ -1,12 +1,17 @@
-using AdventOfCode2024.Utility;
-
 namespace AdventOfCode2024.Days;
 
 public class Day11 : IDay
 {
+    private struct StonedBlinks(long stone, int blink)
+    {
+        public long StoneValue { get; set; } = stone;
+        public int BlinkCount { get; set; } = blink;
+    }
+
     private string _example = @"125 17";
 
     private readonly List<string> _input = [];
+    private readonly Dictionary<StonedBlinks, long> _cache = [];
 
     public Day11(bool useExample = false)
     {
@@ -25,61 +30,39 @@ public class Day11 : IDay
 
     public void Part1()
     {
-        var stones = _input.Select(long.Parse).ToList();
-        var result = Blink(stones, 10);
-
-        Console.WriteLine($"The stone line is {result.Count} long after 25 blinks!");
+        var result = _input.Select(x => Blink(long.Parse(x), 25)).Sum();
+        Console.WriteLine($"The stone line is {result} long after 25 blinks!");
     }
 
     public void Part2()
     {
-        var stoneValues = new Dictionary<long, long>();
-        var stones = _input.Select(long.Parse).ToList();
-        var result = Blink2(stones, 10);
-        Console.WriteLine($"The stone line is {result} long after 75 blinks!");
+        var blinks = 75;
+        var result = _input.Select(x => Blink(long.Parse(x), blinks)).Sum();
+        Console.WriteLine($"The stone line is {result} long after {blinks} blinks!");
     }
 
-    private static List<long> Blink(List<long> stones, int blinks)
+    private long Blink(long stone, int blinks)
     {
-        while (blinks > 0)
+        if (blinks == 0)
+            return 1L;
+        var nextBlink = blinks - 1;
+        if (_cache.TryGetValue(new StonedBlinks(stone, nextBlink), out var existing)) return existing;
+        long result;
+        switch (stone)
         {
-            --blinks;
-            stones = stones.Blink().ToList();
-
-            // Console.WriteLine($"Stones: {string.Join(' ', stones)} Length: {stones.Count}; Zeroes: {stones.Where(x => x == 0).Count()}");
+            case 0:
+                result = Blink(1L, nextBlink);
+                break;
+            case var x when x.ToString().Length % 2 == 0:
+                var word = x.ToString();
+                result = Blink(long.Parse(word[..(word.Length / 2)]), nextBlink)
+                + Blink(long.Parse(word[(word.Length / 2)..]), nextBlink);
+                break;
+            default:
+                result = Blink(stone * 2024, nextBlink);
+                break;
         }
-        return stones;
-    }
-
-    private static long Blink2(List<long> stones, int blinks)
-    {
-        var stoneValues = new Dictionary<long, long>();
-        while (blinks > 0)
-        {
-            --blinks;
-            foreach (var stone in stones.Blink().ToList())
-            {
-                switch (stone)
-                {
-                    case 0:
-                        if (!stoneValues.TryAdd(1L, 1L)) stoneValues[1L]++;
-                        break;
-                    case var x when x.ToString().Length % 2 == 0:
-                        var word = x.ToString();
-                        var key1 = long.Parse(word[..(word.Length / 2)]);
-                        var key2 = long.Parse(word[(word.Length / 2)..]);
-                        if (!stoneValues.TryAdd(key1, 1L)) stoneValues[key1]++;
-                        if (!stoneValues.TryAdd(key2, 1L)) stoneValues[key2]++;
-                        break;
-                    default:
-                        var key = stone * 2024;
-                        if (!stoneValues.TryAdd(key, 1L)) stoneValues[key]++;
-                        break;
-                }
-            }
-            // Console.WriteLine($"Stones: {string.Join(' ', stones)} Length: {stones.Count}; Zeroes: {stones.Where(x => x == 0).Count()}");
-        }
-        // Console.WriteLine($"Hashing: {string.Join(',', stoneValues.Select(d => $"{d.Key}: {d.Value}"))}");
-        return stoneValues.Values.Sum();
+        _cache[new StonedBlinks(stone, nextBlink)] = result;
+        return result;
     }
 }
