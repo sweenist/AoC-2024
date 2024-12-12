@@ -24,23 +24,26 @@ MMMISSJEEE";
         if (useExample)
         {
             Console.WriteLine("Using the example data");
-            _input.AddRange(_example.Split('\n'));
+            _input.AddRange(_example.Split('\n').Select(s => s.TrimEnd()));
         }
         else
         {
             var inputFile = $"inputData/{GetType().Name}.txt";
             using var sr = new StreamReader(inputFile);
-            _input.AddRange(sr.ReadToEnd().Split('\n'));
+            _input.AddRange(sr.ReadToEnd().Split('\n').Select(s => s.TrimEnd()));
         }
         _bounds = new Boundary(_input.Count, _input[0].Length);
     }
 
     public void Part1()
     {
-        var plotPoints = _input.SelectMany((y, i) => y.TrimEnd().Select((x, j) => new Plot(x, new Point(j, i))));
+        var plotPoints = _input.SelectMany((y, i) => y.Select((x, j) => new Plot(x, new Point(j, i))));
         var result = Map(plotPoints);
         var totalCost = result.Sum(x => x.Value.Price);
+        var totalArea = result.Sum(x => x.Value.Area);
+
         // Console.WriteLine($"Regions are: {string.Join("\n\n", result.Values)}");
+        Console.WriteLine($"Total area are {totalArea}. SHould equal {_bounds.Width * _bounds.Height}");
 
         Console.WriteLine($"Total fence costs are {totalCost}");
     }
@@ -86,8 +89,8 @@ MMMISSJEEE";
             }
         }
 
-        for (var y = 0; y < _bounds.BoundY; y++)
-            for (var x = 0; x < _bounds.BoundX; x++)
+        for (var y = 0; y < _bounds.Height; y++)
+            for (var x = 0; x < _bounds.Width; x++)
             {
                 var point = new Point(x, y);
                 if (visited[point]) continue;
@@ -96,7 +99,6 @@ MMMISSJEEE";
                 var plot = sections.Single(x => x.Location == point);
                 Traverse(plot, searchId, Vector.Zero);
             }
-
         return regions;
     }
 
@@ -113,12 +115,12 @@ MMMISSJEEE";
     {
         public List<Plot> Plots { get; set; } = [];
         int Perimeter => Plots.Select(p => p.Perimeter).Sum();
-        int Area => Plots.Count;
+        public int Area => Plots.Count;
         public int Price => Area * Perimeter;
 
         public override string ToString()
         {
-            return $"Region: {Plots[0].Id}: Area{Area}, P:{Perimeter}: \\$${Price}:\n\t{string.Join("\n\t", Plots.Select(p => $"{p.Location} => {p.Perimeter}"))}";
+            return $"Region: {Plots[0].Id}: Area{Area}, P:{Perimeter}: ${Price}:\n\t{string.Join("\n\t", Plots.Select(p => $"{p.Location} => {p.Perimeter}"))}";
         }
     }
 }
