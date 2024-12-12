@@ -1,3 +1,4 @@
+using AdventOfCode2024.Types;
 using AdventOfCode2024.Utility;
 
 namespace AdventOfCode2024.Days;
@@ -32,11 +33,7 @@ MXMXAXMASX";
             using var sr = new StreamReader(inputFile);
             _input.AddRange(sr.ReadToEnd().Split('\n'));
         }
-        _bounds = new Boundary
-        {
-            Height = _input.Count,
-            Width = _input[0].Length,
-        };
+        _bounds = new Boundary(_input.Count, _input[0].Length);
     }
 
     public void Part1()
@@ -119,13 +116,5 @@ MXMXAXMASX";
     private char GetLetter(Point pos)
     {
         return _input[pos.Y][pos.X];
-    }
-
-    private record Boundary
-    {
-        public int Height { get; set; }
-        public int Width { get; set; }
-        public int BoundX => Width - 1;
-        public int BoundY => Height - 1;
     }
 }
