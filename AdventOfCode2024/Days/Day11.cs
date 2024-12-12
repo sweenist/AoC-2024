@@ -43,6 +43,11 @@ public class Day11 : IDay
 
     private long Blink(long stone, int blinks)
     {
+        bool EvenDigits(long inVar, out long outVar)
+        {
+            outVar = (long)Math.Floor(Math.Log10(inVar)) + 1;
+            return outVar % 2 == 0;
+        }
         if (blinks == 0)
             return 1L;
         var nextBlink = blinks - 1;
@@ -53,10 +58,9 @@ public class Day11 : IDay
             case 0:
                 result = Blink(1L, nextBlink);
                 break;
-            case var x when x.ToString().Length % 2 == 0:
-                var word = x.ToString();
-                result = Blink(long.Parse(word[..(word.Length / 2)]), nextBlink)
-                + Blink(long.Parse(word[(word.Length / 2)..]), nextBlink);
+            case var x when EvenDigits(x, out var digits):
+                result = Blink(stone / (long)Math.Pow(10, digits), nextBlink)
+                + Blink(stone % (long)Math.Pow(10, digits), nextBlink);
                 break;
             default:
                 result = Blink(stone * 2024, nextBlink);
