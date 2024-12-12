@@ -89,6 +89,11 @@ public struct Vector(int X, int Y, int? Z = null)
     }
 }
 
+public static class VectorExtensions
+{
+    public static Vector Invert(this Vector v) => new(-v.X, -v.Y);
+}
+
 public record PointPair(Point A, Point B)
 {
     public Point A { get; set; } = A;
@@ -104,3 +109,4 @@ public record PointPair(Point A, Point B)
         return $"A:<{A}> B:<{B}>";
     }
 }
+
