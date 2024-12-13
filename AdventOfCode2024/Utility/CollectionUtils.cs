@@ -1,3 +1,5 @@
+using AdventOfCode2024.Utility.Math;
+
 namespace AdventOfCode2024.Utility;
 
 public static class CollectionUtils

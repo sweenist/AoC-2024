@@ -1,6 +1,6 @@
-using System.ComponentModel;
 using System.Text;
 using AdventOfCode2024.Utility;
+using AdventOfCode2024.Utility.Math;
 
 namespace AdventOfCode2024.Days;
 
