@@ -92,6 +92,9 @@ public struct Vector(int X, int Y, int? Z = null)
 public static class VectorExtensions
 {
     public static Vector Invert(this Vector v) => new(-v.X, -v.Y);
+
+    public static Vector Clockwise(this Vector v) => new(-v.Y, v.X);
+    public static Vector AntiClockwise(this Vector v) => new(v.Y, -v.X);
 }
 
 public record PointPair(Point A, Point B)

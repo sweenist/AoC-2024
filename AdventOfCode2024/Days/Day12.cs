@@ -50,7 +50,15 @@ MMMISSJEEE";
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var plotPoints = _input.SelectMany((y, i) => y.Select((x, j) => new Plot(x, new Point(j, i))));
+        var result = Map(plotPoints);
+        foreach (var region in result.Select(x => x.Value))
+        {
+            region.CalculateVertices();
+            // Console.WriteLine($"Region {region} has {region.BulkPrice} ({region.Vertices} x Area)");
+        }
+
+
     }
 
     private Dictionary<int, Region> Map(IEnumerable<Plot> sections)
@@ -115,12 +123,77 @@ MMMISSJEEE";
     {
         public List<Plot> Plots { get; set; } = [];
         int Perimeter => Plots.Select(p => p.Perimeter).Sum();
+        public int Vertices { get; private set; }
         public int Area => Plots.Count;
         public int Price => Area * Perimeter;
+        public int BulkPrice => Vertices * Area;
+
+        public void CalculateVertices()
+        {
+            if (Area == 1) Vertices += 4;
+            else
+            {
+                var edgePlots = Plots.Where(p => p.Perimeter > 0)
+                                       .OrderBy(x => x.Location.X)
+                                       .ThenBy(x => x.Location.Y)
+                                       .ToList();
+                var visitedEdges = edgePlots.Select(x => new KeyValuePair<Point, bool>(x.Location, false)).ToDictionary();
+                var startPlot = edgePlots[0];
+                var startDirection = Vector.CardinalPoints.Intersect(startPlot.Neighbours
+                        .Select(x => startPlot.Location - x.Location)
+                        .Select(x => new Vector(x.X, x.Y)))
+                    .First();
+
+                var currentPlot = startPlot;
+                var currentDirection = startDirection;
+                Console.WriteLine($"Starting edge detection on Region {currentPlot.Id} {currentPlot.Location}, Direction {currentDirection}");
+
+                do
+                {
+                    Console.WriteLine($"Heading Direction {currentDirection} from {currentPlot.Location}");
+
+                    visitedEdges[currentPlot.Location] = true;
+                    //ClockWise
+                    var nextPlot = currentPlot.Neighbours.FirstOrDefault(x => x.Location == currentPlot.Location + currentDirection.Clockwise());
+                    if (nextPlot is not null)
+                    {
+                        currentDirection = currentDirection.Clockwise();
+                        Console.WriteLine($"\tTurning CW and moving {currentDirection} to {nextPlot.Location}");
+                        Vertices++;
+                        currentPlot = nextPlot;
+                        continue;
+                    }
+                    //Straight
+                    nextPlot = currentPlot.Neighbours.FirstOrDefault(x => x.Location == currentPlot.Location + currentDirection);
+                    if (nextPlot is not null)
+                    {
+                        Console.WriteLine($"\tMoving straight to {nextPlot.Location}");
+                        currentPlot = nextPlot;
+                        continue;
+                    }
+                    //CounterClockwise
+                    nextPlot = currentPlot.Neighbours.FirstOrDefault(x => x.Location == currentPlot.Location + currentDirection.AntiClockwise());
+                    if (nextPlot is not null)
+                    {
+                        currentDirection = currentDirection.AntiClockwise();
+                        Console.WriteLine($"\tTurning CCW and moving {currentDirection} to {nextPlot.Location}");
+                        Vertices++;
+                        currentPlot = nextPlot;
+                        continue;
+                    }
+
+                    currentPlot = currentPlot.Neighbours.Single();
+                    currentDirection = currentDirection.Invert();
+                    Console.WriteLine($"\tTurning around and moving {currentDirection} to {currentPlot.Location}");
+                    Vertices += 2;
+                } while (currentDirection != startDirection && currentPlot != startPlot);
+                //handle missing edges
+            }
+        }
 
         public override string ToString()
         {
-            return $"Region: {Plots[0].Id}: Area{Area}, P:{Perimeter}: ${Price}:\n\t{string.Join("\n\t", Plots.Select(p => $"{p.Location} => {p.Perimeter}"))}";
+            return $"Region: {Plots[0].Id}: Area {Area}, P:{Perimeter}: ${Price}";
         }
     }
 }
