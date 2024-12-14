@@ -34,6 +34,14 @@ public struct Point(int X, int Y) : ICoordinate
     }
 }
 
+public static class PointExtensions
+{
+    public static bool IsBetween(this Point p, ICoordinate min, ICoordinate max)
+    {
+        return p.X >= min.X && p.X <= max.X && p.Y >= min.Y && p.Y <= max.Y;
+    }
+}
+
 public record PointPair(Point A, Point B)
 {
     public Point A { get; set; } = A;

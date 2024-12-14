@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Text;
+using AdventOfCode2024.Types;
+using AdventOfCode2024.Utility.Math;
 
 namespace AdventOfCode2024.Utility;
 
@@ -24,5 +27,34 @@ public static class Diagnostics
             var x when x >= TimeSpan.FromSeconds(60) && x < TimeSpan.FromMinutes(90) => $"{x:m\\:ss} minutes",
             var x => $"{x:g}"
         };
+    }
+
+    public static string PrintMap(IEnumerable<ICoordinate> points, Boundary bounds)
+    {
+        var s = new StringBuilder();
+        for (var y = 0; y < bounds.Height; y++)
+        {
+            for (var x = 0; x < bounds.Width; x++)
+            {
+                s.Append(points.Any(p => p.X == x && p.Y == y) ? '#' : '.');
+            }
+            s.Append('\n');
+        }
+        return s.ToString();
+    }
+
+    public static string PrintMapWithCounts(IEnumerable<ICoordinate> points, Boundary bounds)
+    {
+        var s = new StringBuilder();
+        for (var y = 0; y < bounds.Height; y++)
+        {
+            for (var x = 0; x < bounds.Width; x++)
+            {
+                var pointCounts = points.Count(p => p.X == x && p.Y == y);
+                s.Append(pointCounts > 0 ? pointCounts.ToString() : ".");
+            }
+            s.Append('\n');
+        }
+        return s.ToString();
     }
 }

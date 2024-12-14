@@ -62,4 +62,30 @@ public static class CollectionUtils
         }
         return pairs;
     }
+
+    public static int Product(this IEnumerable<int> set)
+    {
+        using var e = set.GetEnumerator();
+        var isFirst = true;
+        int result = 0;
+        while (e.MoveNext())
+        {
+            result = isFirst ? e.Current : result * e.Current;
+            isFirst = false;
+        }
+        return result;
+    }
+
+    public static long Product(this IEnumerable<long> set)
+    {
+        using var e = set.GetEnumerator();
+        var isFirst = true;
+        long result = 0;
+        while (e.MoveNext())
+        {
+            result = isFirst ? e.Current : result * e.Current;
+            isFirst = false;
+        }
+        return result;
+    }
 }

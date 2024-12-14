@@ -35,6 +35,8 @@ public struct Vector(int X, int Y, int? Z = null) : ICoordinate
                                                                .ToList();
 
     public static Vector operator +(Vector source, Vector target) => new(source.X + target.X, source.Y + target.Y);
+    public static Vector operator *(Vector source, int factor) => new(source.X * factor, source.Y * factor);
+
     public static bool operator ==(Vector a, Vector b) => a.X == b.X && a.Y == b.Y;
     public static bool operator !=(Vector a, Vector b) => a.X != b.X || a.Y != b.Y;
 
