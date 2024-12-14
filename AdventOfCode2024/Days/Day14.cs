@@ -22,6 +22,7 @@ p=9,5 v=-3,-3";
 
     private readonly List<string> _input = [];
     private readonly Boundary _bounds;
+    private readonly List<(Point Min, Point Max)> _quadrants;
 
     public Day14(bool useExample = false)
     {
@@ -38,6 +39,13 @@ p=9,5 v=-3,-3";
             _input.AddRange(sr.ReadToEnd().Split('\n'));
             _bounds = new Boundary(103, 101);
         }
+
+        _quadrants = [
+            (Min:new Point(0, 0), Max: new Point(_bounds.BoundX / 2 -1, _bounds.BoundY / 2 - 1)),
+            (Min:new Point(_bounds.BoundX /2 +1, 0), Max: new Point(_bounds.BoundX, _bounds.BoundY/2-1)),
+            (Min:new Point(0,_bounds.BoundY/2+1), Max: new Point(_bounds.BoundX /2 -1, _bounds.BoundY)),
+            (Min:new Point(_bounds.BoundX/2+1,_bounds.BoundY/2+1), Max: new Point(_bounds.BoundX, _bounds.BoundY)),
+        ];
     }
 
     public void Part1()
@@ -45,23 +53,36 @@ p=9,5 v=-3,-3";
         var robots = SetupRobots();
 
         foreach (var robot in robots)
-            MoveRobots(robot, 100);
+            MoveRobot(robot, 100);
 
-        var quadrants = new[]{
-            (Min:new Point(0, 0), Max: new Point(_bounds.BoundX / 2 -1, _bounds.BoundY / 2 - 1)),
-            (Min:new Point(_bounds.BoundX /2 +1, 0), Max: new Point(_bounds.BoundX, _bounds.BoundY/2-1)),
-            (Min:new Point(0,_bounds.BoundY/2+1), Max: new Point(_bounds.BoundX /2 -1, _bounds.BoundY)),
-            (Min:new Point(_bounds.BoundX/2+1,_bounds.BoundY/2+1), Max: new Point(_bounds.BoundX, _bounds.BoundY)),
-        }.ToList();
 
-        var safetyScore = quadrants.Select(x => robots.Where(r => r.Location.IsBetween(x.Min, x.Max)).Count()).Product();
+
+        var safetyScore = _quadrants.Select(x => robots.Where(r => r.Location.IsBetween(x.Min, x.Max)).Count()).Product();
 
         Console.WriteLine($"The safety score after 100 seconds is {safetyScore}");
     }
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var lcm = _bounds.Height * _bounds.Width;
+        var robots = SetupRobots();
+        var scores = new Dictionary<int, int>();
+
+        for (var i = 1; i < lcm; i += 1)
+        {
+            MoveRobots(robots, 1);
+            var safetyScore = _quadrants.Select(x => robots.Where(r => r.Location.IsBetween(x.Min, x.Max)).Count()).Product();
+            scores[i] = safetyScore;
+        }
+
+        var secondsToLowestScore = scores.OrderBy(x => x.Value).First().Key;
+        robots = SetupRobots();
+        MoveRobots(robots, secondsToLowestScore);
+
+        var map = Diagnostics.PrintMapWithCounts(robots.Select(x => (ICoordinate)x.Location), _bounds);
+
+        Console.WriteLine(map);
+        Console.WriteLine($"Christmas tree found at {secondsToLowestScore}");
     }
 
     private List<Robot> SetupRobots()
@@ -79,10 +100,18 @@ p=9,5 v=-3,-3";
         return _input.Select(ParseRoboSpecs).Select(x => new Robot(x.Position, x.Velocity)).ToList();
     }
 
-    private void MoveRobots(Robot robot, int moves)
+    private void MoveRobot(Robot robot, int moves)
     {
         robot.Move(moves);
         robot.Normalize(_bounds);
+    }
+
+    private void MoveRobots(List<Robot> robots, int seconds)
+    {
+        foreach (var robot in robots)
+        {
+            MoveRobot(robot, seconds);
+        }
     }
 
     public record Robot(Point Location, Vector Velocity)
