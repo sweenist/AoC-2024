@@ -48,7 +48,11 @@ Prize: X=18641, Y=10279";
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        foreach (var machine in _machines)
+            machine.ApplyPrecision();
+
+        var tokensNeeded = _machines.Select(x => x.TotalTokens).Sum();
+        Console.WriteLine($"It takes a least {tokensNeeded} tokens to win all the prizes with precision fix.");
     }
 
     private IEnumerable<ClawMachine> ConfigureMachines()
@@ -83,7 +87,7 @@ Prize: X=18641, Y=10279";
 
     private record ClawMachine
     {
-        private readonly long _precisionFix = 10000000000000L;
+        private readonly long _precisionFix = 10_000_000_000_000L;
         public ClawMachine(Dictionary<string, ICoordinate> inputs)
         {
             ButtonA = (Vector)inputs["A"];
@@ -95,11 +99,11 @@ Prize: X=18641, Y=10279";
         public Vector ButtonB { get; private set; }
         public Point Prize { get; private set; }
 
-        public int APresses { get; private set; }
-        public int BPresses { get; private set; }
+        public long APresses { get; private set; }
+        public long BPresses { get; private set; }
 
         public bool HasSolution { get; private set; }
-        public int TotalTokens => (3 * APresses) + BPresses;
+        public long TotalTokens => (3 * APresses) + BPresses;
 
         public override string ToString()
         {
@@ -120,9 +124,21 @@ Prize: X=18641, Y=10279";
             }
         }
 
-        private void ApplyPrecision()
+        public void ApplyPrecision()
         {
+            APresses = 0L;
+            BPresses = 0L;
 
+            var matrixA = new Matrix2D(ButtonA, ButtonB, pivot: true);
+            var matrix1 = new Matrix2D(Prize.X + _precisionFix, Prize.Y + _precisionFix, ButtonB, pivot: true);
+            var matrix2 = new Matrix2D(ButtonA, Prize.X + _precisionFix, Prize.Y + _precisionFix, pivot: true);
+
+            HasSolution = matrixA.HasWholeCoefficient(matrix1) && matrixA.HasWholeCoefficient(matrix2);
+            if (HasSolution)
+            {
+                APresses = matrix1.Determinant / matrixA.Determinant;
+                BPresses = matrix2.Determinant / matrixA.Determinant;
+            }
         }
     }
 }

@@ -10,26 +10,41 @@ public class Matrix2D
         Y2 = coord2.Y;
     }
 
-    public int X1 { get; set; }
-    public int X2 { get; set; }
-    public int Y1 { get; set; }
-    public int Y2 { get; set; }
+    public Matrix2D(ICoordinate coord1, long x2, long y2, bool pivot = false)
+    {
+        X1 = coord1.X;
+        X2 = pivot ? x2 : coord1.Y;
+        Y1 = pivot ? coord1.Y : x2;
+        Y2 = y2;
+    }
+    public Matrix2D(long x1, long y1, ICoordinate coord2, bool pivot = false)
+    {
+        X1 = x1;
+        X2 = pivot ? coord2.X : y1;
+        Y1 = pivot ? y1 : coord2.X;
+        Y2 = coord2.Y;
+    }
 
-    public int Determinant => (X1 * Y2) - (X2 * Y1);
+    public long X1 { get; set; }
+    public long X2 { get; set; }
+    public long Y1 { get; set; }
+    public long Y2 { get; set; }
+
+    public long Determinant => (X1 * Y2) - (X2 * Y1);
 }
 
 public static class MatrixExtensions
 {
     public static bool HasWholeCoefficient(this Matrix2D a1, Matrix2D a2)
     {
-        var epsilon = 0.000001;
-        var quotient = a2.Determinant / (float)a1.Determinant;
+        var quotient = a2.Determinant / (double)a1.Determinant;
+
 
         var diff = System.Math.Abs(quotient) - System.Math.Floor(System.Math.Abs(quotient));
-        return diff < epsilon;
+        return diff < double.Epsilon;
     }
 
-    public static int Divide(this Matrix2D a1, Matrix2D a2)
+    public static long Divide(this Matrix2D a1, Matrix2D a2)
     {
         return a2.Determinant / a1.Determinant;
     }
