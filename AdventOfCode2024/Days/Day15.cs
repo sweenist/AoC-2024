@@ -49,7 +49,8 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
 
     public void Part1()
     {
-        var (map, movements) = ParseInput(_useExample);
+        var (iMap, movements) = ParseInput();
+        var map = (Map)iMap;
 
         foreach (var move in movements)
         {
@@ -66,11 +67,11 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
         throw new NotImplementedException();
     }
 
-    private (Map Map, Vector[] Movements) ParseInput(bool isExample)
+    private (IMap Map, Vector[] Movements) ParseInput()
     {
         bool useSmall = false;
         var inputFile = $"inputData/{GetType().Name}.txt";
-        using var reader = isExample
+        using var reader = _useExample
             ? new StreamReader(StreamHelper.GetStream(useSmall ? _small : _example))
             : new StreamReader(inputFile);
 
@@ -98,7 +99,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
         throw new InvalidDataException("Input format was incorrect");
     }
 
-    private Vector[] InitializeMovements(string input)
+    private static Vector[] InitializeMovements(string input)
     {
         var hatStick = new Dictionary<char, Vector>{
             {'^', Vector.North},
@@ -109,7 +110,12 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
         return input.Select(hatStick.GetValueOrDefault).ToArray();
     }
 
-    private record Map
+    private interface IMap
+    {
+        Point Robot { get; set; }
+    }
+
+    private record Map : IMap
     {
         public Map(List<string> rawMap)
         {
