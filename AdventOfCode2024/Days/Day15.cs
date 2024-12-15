@@ -64,7 +64,10 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var (iMap, movements) = ParseInput(expand: true);
+        var map = (ExpandedMap)iMap;
+
+        Console.WriteLine(map);
     }
 
     private (IMap Map, Vector[] Movements) ParseInput(bool expand = false)
@@ -84,7 +87,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
             {
                 var rawMovements = string.Join(",", reader.ReadToEnd().Split('\n'));
                 var movements = InitializeMovements(rawMovements);
-                IMap map = expand ? new Map(mapLines) : new ExpandedMap(mapLines);
+                IMap map = expand ? new ExpandedMap(mapLines) : new Map(mapLines);
                 return (map, movements);
             }
 
@@ -109,8 +112,10 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
                 sb.Append("##");
             else if (c == 'O')
                 sb.Append("[]");
+            else if (c == '@')
+                sb.Append("@.");
             else
-                sb.Append(c);
+                sb.Append("..");
         }
         return sb.ToString();
     }
@@ -225,6 +230,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
     {
         public ExpandedMap(List<string> rawMap)
         {
+            Console.WriteLine(string.Join('\n', rawMap));
             Bounds = new Boundary(rawMap.Count, rawMap[0].Length);
             var walls = new List<Point>();
             var boxes = new List<Box>();
@@ -263,8 +269,8 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
             if (canMove)
             {
                 Robot += move;
-                foreach (var index in boxIndices)
-                    Boxes[index] += move;
+                // foreach (var index in boxIndices)
+                //     Boxes[index] += move;
             }
         }
 
@@ -273,11 +279,11 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
             var nextLocation = location + move;
             if (Walls.Any(x => x.Equals(nextLocation)))
                 return ([], false);
-            if (Boxes.Any(x => x.Equals(nextLocation)))
-            {
-                boxIndices.Add(Boxes.IndexOf(nextLocation));
-                return CheckLine(move, nextLocation, boxIndices);
-            }
+            // if (Boxes.Any(x => x.Equals(nextLocation)))
+            // {
+            //     boxIndices.Add(Boxes.IndexOf(nextLocation));
+            //     return CheckLine(move, nextLocation, boxIndices);
+            // }
             else
                 return (boxIndices, true);
         }
@@ -293,7 +299,8 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
                     var currentPoint = new Point(x, y);
                     if (Robot == currentPoint) printChar = '@';
                     else if (Walls.Any(w => w.Equals(currentPoint))) printChar = '#';
-                    else if (Boxes.Any(b => b.Equals(currentPoint))) printChar = 'O';
+                    else if (Boxes.Any(b => b.Left.Equals(currentPoint))) printChar = '[';
+                    else if (Boxes.Any(b => b.Right.Equals(currentPoint))) printChar = ']';
                     sb.Append(printChar);
                 }
                 sb.Append('\n');
