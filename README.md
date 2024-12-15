@@ -14,7 +14,7 @@ Day 8 &nbsp;&nbsp; 🟢
 Day 9 &nbsp;&nbsp; 🟢  
 Day 10 &nbsp;🟢  
 Day 11 &nbsp;🟢  
-Day 12 &nbsp;🟡  
+Day 12 &nbsp;🟢  
 Day 13 &nbsp;🟢  
 Day 14 &nbsp;🟢  
 Day 15 &nbsp;⚫  
