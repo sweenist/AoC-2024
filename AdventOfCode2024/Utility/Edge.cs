@@ -31,6 +31,8 @@ public class EdgeDetector
     public bool West => _foundEdges[Vector.West];
 
     public int EdgeCount => _foundEdges.Values.Count(x => x);
+    public bool ParallelWalls => EdgeCount == 2 && ((North && South) || (East && West));
+    public bool IsCorner => EdgeCount == 2 && ((North && East) || (East && South) || (South && West) || (West && North));
 }
 
 public static class EdgeMap
@@ -51,8 +53,8 @@ public static class EdgeMap
     public static Edge SW => new() { Id = 'L', Perimeter = 2, Side = 1 };
 
     //2 sides - 1 wide
-    public static Edge Vertical => new() { Id = '|', Perimeter = 4, Side = 0 };
-    public static Edge Horizontal => new() { Id = '=', Perimeter = 4, Side = 0 };
+    public static Edge Vertical => new() { Id = '|', Perimeter = 2, Side = 0 };
+    public static Edge Horizontal => new() { Id = '=', Perimeter = 2, Side = 0 };
 
     //1 side
 
@@ -66,6 +68,15 @@ public static class EdgeMap
 
     public static Edge ParseEdges(EdgeDetector detector)
     {
-        return None;
+        return detector.EdgeCount switch
+        {
+            0 => None,
+            1 => detector.North ? North : detector.East ? East : detector.South ? South : West, //gross
+            2 when detector.ParallelWalls => detector.North ? Horizontal : Vertical,
+            2 when detector.IsCorner => NW,
+            3 => U,
+            4 => O,
+            _ => throw new Exception($"Cannot have more than 4 edges {detector.EdgeCount}")
+        };
     }
 }
