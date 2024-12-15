@@ -8,17 +8,6 @@ namespace AdventOfCode2024.Days;
 
 public class Day15 : IDay
 {
-    private readonly string _small = @"########
-#..O.O.#
-##@.O..#
-#...O..#
-#.#.O..#
-#...O..#
-#......#
-########
-
-<^^>>>vv<v>>v<<";
-
     private readonly string _example = @"##########
 #..O..O.O#
 #......O.#
@@ -78,10 +67,9 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
 
     private (IMap Map, Vector[] Movements) ParseInput(bool expand = false)
     {
-        bool useSmall = false;
         var inputFile = $"inputData/{GetType().Name}.txt";
         using var reader = _useExample
-            ? new StreamReader(StreamHelper.GetStream(useSmall ? _small : _example))
+            ? new StreamReader(StreamHelper.GetStream(_example))
             : new StreamReader(inputFile);
 
         bool parseMovements = false;
