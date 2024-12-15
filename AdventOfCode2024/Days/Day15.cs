@@ -1,3 +1,4 @@
+using System.Text;
 using AdventOfCode2024.Types;
 using AdventOfCode2024.Utility;
 using AdventOfCode2024.Utility.Math;
@@ -6,6 +7,17 @@ namespace AdventOfCode2024.Days;
 
 public class Day15 : IDay
 {
+    private readonly string _small = @"########
+#..O.O.#
+##@.O..#
+#...O..#
+#.#.O..#
+#...O..#
+#......#
+########
+
+<^^>>>vv<v>>v<<";
+
     private readonly string _example = @"##########
 #..O..O.O#
 #......O.#
@@ -28,17 +40,25 @@ vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
 ^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
 v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
 
-    private readonly Vector[] _movements = [];
-    private readonly Map _map;
+    private readonly bool _useExample;
 
     public Day15(bool useExample = false)
     {
-        (_map, _movements) = ParseInput(useExample);
+        _useExample = useExample;
     }
 
     public void Part1()
     {
-        throw new NotImplementedException();
+        var (map, movements) = ParseInput(_useExample);
+
+        foreach (var move in movements)
+        {
+            map.Move(move);
+        }
+        var totalGpsScore = map.Boxes.Select(b => (long)b.Y * 100 + b.X).Sum();
+
+        // Console.WriteLine(_map);
+        Console.WriteLine($"All box GPS coordinates are {totalGpsScore}");
     }
 
     public void Part2()
@@ -48,9 +68,10 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
 
     private (Map Map, Vector[] Movements) ParseInput(bool isExample)
     {
+        bool useSmall = false;
         var inputFile = $"inputData/{GetType().Name}.txt";
         using var reader = isExample
-            ? new StreamReader(StreamHelper.GetStream(_example))
+            ? new StreamReader(StreamHelper.GetStream(useSmall ? _small : _example))
             : new StreamReader(inputFile);
 
         bool parseMovements = false;
@@ -118,8 +139,52 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
             Boxes = [.. boxes];
         }
         public Boundary Bounds { get; set; }
-        public Point[] Walls { get; set; }
-        public Point[] Boxes { get; set; }
+        public List<Point> Walls { get; set; }
+        public List<Point> Boxes { get; set; }
         public Point Robot { get; set; }
+
+        public void Move(Vector move)
+        {
+            var rowColumnsdetails = CheckLine(move, Robot, []);
+            if (rowColumnsdetails.canMove)
+            {
+                Robot += move;
+                foreach (var index in rowColumnsdetails.boxIndices)
+                    Boxes[index] += move;
+            }
+        }
+
+        public (List<int> boxIndices, bool canMove) CheckLine(Vector move, Point location, List<int> boxIndices)
+        {
+            var nextLocation = location + move;
+            if (Walls.Any(x => x.Equals(nextLocation)))
+                return ([], false);
+            if (Boxes.Any(x => x.Equals(nextLocation)))
+            {
+                boxIndices.Add(Boxes.IndexOf(nextLocation));
+                return CheckLine(move, nextLocation, boxIndices);
+            }
+            else
+                return (boxIndices, true);
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            for (var y = 0; y < Bounds.Height; y++)
+            {
+                for (var x = 0; x < Bounds.Width; x++)
+                {
+                    var printChar = '.';
+                    var currentPoint = new Point(x, y);
+                    if (Robot == currentPoint) printChar = '@';
+                    else if (Walls.Any(w => w.Equals(currentPoint))) printChar = '#';
+                    else if (Boxes.Any(b => b.Equals(currentPoint))) printChar = 'O';
+                    sb.Append(printChar);
+                }
+                sb.Append('\n');
+            }
+            return sb.ToString();
+        }
     }
 }
