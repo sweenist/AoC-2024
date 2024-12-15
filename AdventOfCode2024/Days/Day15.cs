@@ -67,7 +67,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
         throw new NotImplementedException();
     }
 
-    private (IMap Map, Vector[] Movements) ParseInput()
+    private (IMap Map, Vector[] Movements) ParseInput(bool expand = false)
     {
         bool useSmall = false;
         var inputFile = $"inputData/{GetType().Name}.txt";
@@ -84,19 +84,35 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
             {
                 var rawMovements = string.Join(",", reader.ReadToEnd().Split('\n'));
                 var movements = InitializeMovements(rawMovements);
-                var map = new Map(mapLines);
+                IMap map = expand ? new Map(mapLines) : new ExpandedMap(mapLines);
                 return (map, movements);
             }
+
             var line = reader.ReadLine();
             if (line!.Trim().Equals(string.Empty))
             {
                 parseMovements = true;
                 continue;
             }
-            mapLines.Add(line);
+            mapLines.Add(expand ? ExpandLine(line) : line);
         }
 
         throw new InvalidDataException("Input format was incorrect");
+    }
+
+    private static string ExpandLine(string line)
+    {
+        var sb = new StringBuilder();
+        foreach (var c in line)
+        {
+            if (c == '#')
+                sb.Append("##");
+            else if (c == 'O')
+                sb.Append("[]");
+            else
+                sb.Append(c);
+        }
+        return sb.ToString();
     }
 
     private static Vector[] InitializeMovements(string input)
@@ -110,6 +126,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
         return input.Select(hatStick.GetValueOrDefault).ToArray();
     }
 
+    #region types
     private interface IMap
     {
         Point Robot { get; set; }
@@ -151,11 +168,11 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
 
         public void Move(Vector move)
         {
-            var rowColumnsdetails = CheckLine(move, Robot, []);
-            if (rowColumnsdetails.canMove)
+            var (boxIndices, canMove) = CheckLine(move, Robot, []);
+            if (canMove)
             {
                 Robot += move;
-                foreach (var index in rowColumnsdetails.boxIndices)
+                foreach (var index in boxIndices)
                     Boxes[index] += move;
             }
         }
@@ -193,4 +210,97 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
             return sb.ToString();
         }
     }
+
+    struct Box(int x, int y)
+    {
+        public Point Left { get; set; } = new Point(x, y);
+        public readonly Point Right => new Point(Left.X + 1, Left.Y);
+
+        public readonly bool Contains(Point p)
+        {
+            return Left == p || Right == p;
+        }
+    }
+    private record ExpandedMap : IMap
+    {
+        public ExpandedMap(List<string> rawMap)
+        {
+            Bounds = new Boundary(rawMap.Count, rawMap[0].Length);
+            var walls = new List<Point>();
+            var boxes = new List<Box>();
+
+            for (var y = 0; y < Bounds.Height; y++)
+                for (var x = 0; x < Bounds.Width; x++)
+                {
+                    switch (rawMap[y][x])
+                    {
+                        case '#':
+                            walls.Add(new Point(x, y));
+                            break;
+                        case '@':
+                            Robot = new Point(x, y);
+                            break;
+                        case '[':
+                            boxes.Add(new Box(x, y));
+                            x++;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            Walls = [.. walls];
+            Boxes = [.. boxes];
+        }
+
+        public Boundary Bounds { get; set; }
+        public List<Point> Walls { get; set; }
+        public List<Box> Boxes { get; set; }
+        public Point Robot { get; set; }
+
+        public void Move(Vector move)
+        {
+            var (boxIndices, canMove) = CheckMove(move, Robot, []);
+            if (canMove)
+            {
+                Robot += move;
+                foreach (var index in boxIndices)
+                    Boxes[index] += move;
+            }
+        }
+
+        public (List<int> boxIndices, bool canMove) CheckMove(Vector move, Point location, List<int> boxIndices)
+        {
+            var nextLocation = location + move;
+            if (Walls.Any(x => x.Equals(nextLocation)))
+                return ([], false);
+            if (Boxes.Any(x => x.Equals(nextLocation)))
+            {
+                boxIndices.Add(Boxes.IndexOf(nextLocation));
+                return CheckLine(move, nextLocation, boxIndices);
+            }
+            else
+                return (boxIndices, true);
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            for (var y = 0; y < Bounds.Height; y++)
+            {
+                for (var x = 0; x < Bounds.Width; x++)
+                {
+                    var printChar = '.';
+                    var currentPoint = new Point(x, y);
+                    if (Robot == currentPoint) printChar = '@';
+                    else if (Walls.Any(w => w.Equals(currentPoint))) printChar = '#';
+                    else if (Boxes.Any(b => b.Equals(currentPoint))) printChar = 'O';
+                    sb.Append(printChar);
+                }
+                sb.Append('\n');
+            }
+            return sb.ToString();
+        }
+    }
+
+    #endregion
 }
