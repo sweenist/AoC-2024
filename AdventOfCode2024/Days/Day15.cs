@@ -1,5 +1,4 @@
 using System.Text;
-using AdventOfCode2024.Types;
 using AdventOfCode2024.Types.Day15;
 using AdventOfCode2024.Utility;
 using AdventOfCode2024.Utility.Math;
