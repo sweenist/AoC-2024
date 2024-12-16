@@ -9,16 +9,22 @@ public class Day6 : IDay
 {
     public const string LoopMessage = "Starting loop";
 
+    //     private string _example = @".##..
+    // ....#
+    // .....
+    // .^.#.
+    // .....";
+
     private string _example = @"....#.....
-.........#
-..........
-..#.......
-.......#..
-..........
-.#..^.....
-........#.
-#.........
-......#...";
+    .........#
+    ..........
+    ..#.......
+    .......#..
+    ..........
+    .#..^.....
+    ........#.
+    #.........
+    ......#...";
 
     private readonly Map _map;
 
@@ -31,8 +37,6 @@ public class Day6 : IDay
         6,7
         3,6
     */
-    private readonly Point _outOfBounds = new(-1, -1);
-
     public Day6(bool useExample = false)
     {
         if (useExample)
@@ -53,8 +57,6 @@ public class Day6 : IDay
         while (!_map.OutOfBounds)
         {
             _map.Move();
-            // Thread.Sleep(250);
-            // Console.WriteLine(_map);
         }
 
         var totalGuardSTeps = _map.OriginalPath.Select(x => x.Location).Distinct().Count();
@@ -64,20 +66,44 @@ public class Day6 : IDay
     //1740
     public void Part2()
     {
+        while (!_map.OutOfBounds)
+        {
+            _map.Move();
+        }
 
-        // Console.WriteLine($"There are {loopingObstacleLocations} locations for obstacles causing guard loops.");
+        var loopCount = 0;
+        var originalPath = _map.OriginalPath.Select(x => x.Location).Distinct().ToList();
+
+        while (originalPath.Count > 1)
+        {
+            if (_map.OutOfBounds || _map.Looping)
+            {
+                loopCount += _map.Looping ? 1 : 0;
+                _map.SetNewObstacle(originalPath);
+            }
+            _map.Move();
+        }
+        Console.WriteLine($"There are {loopCount} locations for obstacles causing guard loops.");
     }
 
     private record Map
     {
+        private Point _guardStartLocation;
+        private Vector _guardStartDirection;
+
         public Map(string[] input)
         {
-            Bounds = new Boundary(input.Count(), input[0].Length);
+            Bounds = new Boundary(input.Length, input[0].Length);
             for (var y = 0; y < Bounds.Height; y++)
                 for (var x = 0; x < Bounds.Width; x++)
                 {
                     if (input[y][x] == '#') Obstacles.Add(new Point(x, y));
-                    else if (input[y][x] == '^') Guard = new Guard(new Point(x, y), Vector.North);
+                    else if (input[y][x] == '^')
+                    {
+                        Guard = new Guard(new Point(x, y), Vector.North);
+                        _guardStartLocation = new Point(x, y);
+                        _guardStartDirection = Vector.North;
+                    }
                 }
 
             OriginalPath.Add(Guard!.Stance);
@@ -85,7 +111,7 @@ public class Day6 : IDay
 
         public Boundary Bounds { get; }
         public List<Point> Obstacles { get; private set; } = [];
-        public HashSet<(Point Location, Vector Direction)> OriginalPath { get; } = [];
+        public HashSet<(Point Location, Vector Direction)> OriginalPath { get; private set; } = [];
 
         public Guard Guard { get; set; }
         public Point ExtraBoundary { get; set; }
@@ -96,16 +122,36 @@ public class Day6 : IDay
         public void Move()
         {
             var checkPoint = Guard.Location + Guard.Direction;
-            if (Obstacles.Any(x => x.Equals(checkPoint)))
-            {
+            if (ExtraBoundary.Equals(checkPoint) || Obstacles.Any(x => x.Equals(checkPoint)))
                 Guard.Turn();
-            }
             else
-            {
                 Guard.Location = checkPoint;
-            }
+
             if (!OutOfBounds)
                 Looping = !OriginalPath.Add(Guard.Stance);
+        }
+
+        public void SetNewObstacle(List<Point> originalPath)
+        {
+            while (true)
+            {
+                var obstacleLocation = originalPath.Last();
+                originalPath.Remove(obstacleLocation);
+
+                var location = originalPath.Last();
+
+                if (location.Equals(obstacleLocation))
+                    continue;
+
+                Guard.Location = _guardStartLocation;
+                Guard.Direction = _guardStartDirection;
+                OriginalPath = [];
+                OriginalPath.Add(Guard.Stance);
+
+                ExtraBoundary = obstacleLocation;
+                Looping = false;
+                break;
+            }
         }
 
         public override string ToString()
@@ -123,6 +169,8 @@ public class Day6 : IDay
                             : Guard.Direction == Vector.South ? 'v'
                             : '<'; //West
                     else if (Obstacles.Any(x => x.Equals(currentPoint))) printChar = '#';
+                    else if (ExtraBoundary.Equals(currentPoint)) printChar = '@';
+                    else if (OriginalPath.Any(x => x.Location.Equals(currentPoint))) printChar = 'x';
                     sb.Append(printChar);
                 }
                 sb.Append('\n');
