@@ -16,15 +16,15 @@ public class Day6 : IDay
     // .....";
 
     private string _example = @"....#.....
-    .........#
-    ..........
-    ..#.......
-    .......#..
-    ..........
-    .#..^.....
-    ........#.
-    #.........
-    ......#...";
+.........#
+..........
+..#.......
+.......#..
+..........
+.#..^.....
+........#.
+#.........
+......#...";
 
     private readonly Map _map;
 
@@ -93,6 +93,7 @@ public class Day6 : IDay
 
         public Map(string[] input)
         {
+
             Bounds = new Boundary(input.Length, input[0].Length);
             for (var y = 0; y < Bounds.Height; y++)
                 for (var x = 0; x < Bounds.Width; x++)
@@ -105,7 +106,6 @@ public class Day6 : IDay
                         _guardStartDirection = Vector.North;
                     }
                 }
-
             OriginalPath.Add(Guard!.Stance);
         }
 
