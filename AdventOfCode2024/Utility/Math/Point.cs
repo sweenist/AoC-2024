@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace AdventOfCode2024.Utility.Math;
 #pragma warning disable CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
 #pragma warning disable CS0661
-public struct Point(int X, int Y) : ICoordinate
+public struct Point(int X, int Y) : ICoordinate, IComparable<Point>
 #pragma warning restore CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
 #pragma warning restore CS0661
 {
@@ -31,6 +31,13 @@ public struct Point(int X, int Y) : ICoordinate
     public override string ToString()
     {
         return $"Point:<{X}, {Y}>";
+    }
+
+    public int CompareTo(Point other)
+    {
+        if(X < other.X) return -1;
+        else if(X > other.X) return 1;
+        else return Y.CompareTo(other.Y);
     }
 }
 
