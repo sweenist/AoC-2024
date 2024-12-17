@@ -123,7 +123,7 @@ public class Day16 : IDay
                     if (nextPosition == End)
                     {
                         ref var cell = ref Cells[nextPosition.X, nextPosition.Y];
-                        cell.Parent = nextPosition;
+                        cell.Parent = parent;
                         FollowPath();
                         return;
                     }
@@ -131,21 +131,22 @@ public class Day16 : IDay
                     if (!closedList[nextPosition.X, nextPosition.Y]
                         && IsWalkable[nextPosition.X, nextPosition.Y])
                     {
-                        ref var cell = ref Cells[parent.X, parent.Y];
-                        var g = cell.g + 1;
+                        ref var parentCell = ref Cells[parent.X, parent.Y];
+                        var g = parentCell.g + 1;
                         var h = Distance(nextPosition);
                         var f = g + h;
 
-                        Console.WriteLine($"F Values {cell.f} {f}");
+                        Console.WriteLine($"F Values {parentCell.f} {f}");
+                        ref var nextCell = ref Cells[nextPosition.X, nextPosition.Y];
 
-                        if (cell.f == int.MaxValue || cell.f > f)
+                        if (nextCell.f == int.MaxValue || nextCell.f > f)
                         {
                             Console.WriteLine($"adding score {f} for {nextPosition} from {parent}");
                             openList.Add((f, nextPosition));
-                            cell.f = f;
-                            cell.g = g;
-                            cell.Heuristic = h;
-                            cell.Parent = parent;
+                            nextCell.f = f;
+                            nextCell.g = g;
+                            nextCell.Heuristic = h;
+                            nextCell.Parent = parent;
                         }
                     }
                 }
