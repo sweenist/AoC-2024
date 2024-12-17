@@ -72,9 +72,9 @@ public class Day16 : IDay
         throw new NotImplementedException();
     }
 
-    private struct Cell(Point location)
+    private struct Cell(Actor parent)
     {
-        public Point Parent { get; set; } = location;
+        public Actor Parent { get; set; } = parent;
         public int f = int.MaxValue;
         public int g = int.MaxValue;
         public int Heuristic { get; set; } = int.MaxValue;
@@ -96,13 +96,13 @@ public class Day16 : IDay
                 {
                     var cell = input[y][x];
                     IsWalkable[x, y] = cell != '#';
-                    Cells[x, y] = new Cell(new Point(-1, -1));
+                    Cells[x, y] = new Cell(new Actor(new Point(-1, -1), Vector.Zero));
 
                     if (cell == 'E')
                     {
                         Start = new Point(x, y);
                         Reindeer = new Actor(Start, Vector.East);
-                        Cells[x, y].Parent = Start;
+                        Cells[x, y].Parent = Reindeer;
                         Cells[x, y].f = 0;
                         Cells[x, y].g = 0;
                         Cells[x, y].Heuristic = 0;
