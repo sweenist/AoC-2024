@@ -12,9 +12,9 @@
       "program": "${workspaceFolder}/AdventOfCode2024/bin/Debug/net8.0/AdventOfCode2024.dll",
       "args": [
         "--day",
-        "15",
+        "16",
         "--part",
-        "2",
+        "1",
         "-e"
       ],
       "cwd": "${workspaceFolder}",
