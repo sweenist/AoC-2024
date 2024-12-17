@@ -1,4 +1,7 @@
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using AdventOfCode2024.Types;
+using AdventOfCode2024.Utility;
 using AdventOfCode2024.Utility.Math;
 
 namespace AdventOfCode2024.Days;
@@ -56,6 +59,7 @@ public class Day16 : IDay
         public int f = int.MaxValue;
         public int g = int.MaxValue;
         public int Heuristic { get; set; } = int.MaxValue;
+        public Vector Orientation { get; set; } = Vector.Zero;
     }
 
     private record Maze
@@ -75,15 +79,16 @@ public class Day16 : IDay
                     IsWalkable[x, y] = cell != '#';
                     Cells[x, y] = new Cell(new Point(-1, -1));
 
-                    if (cell == 'S')
+                    if (cell == 'E')
                     {
                         Start = new Point(x, y);
+                        Reindeer = new Actor(Start, Vector.East);
                         Cells[x, y].Parent = Start;
                         Cells[x, y].f = 0;
                         Cells[x, y].g = 0;
                         Cells[x, y].Heuristic = 0;
                     }
-                    if (cell == 'E')
+                    if (cell == 'S')
                         End = new Point(x, y);
                 }
         }
@@ -93,6 +98,7 @@ public class Day16 : IDay
         public Boundary Bounds { get; set; }
         public Point Start { get; set; }
         public Point End { get; set; }
+        public Actor Reindeer { get; set; }
 
         public int Distance(Point current)
         {
@@ -102,7 +108,7 @@ public class Day16 : IDay
         public void Traverse()
         {
             var closedList = new bool[Bounds.Width, Bounds.Height];
-            var openList = new SortedSet<(int FScore, Point Position)>(Comparer<(int FScore, Point Position)>.Create((a, b) => a.FScore.CompareTo(b.FScore)))
+            var openList = new SortedSet<(int FScore, Point Position)>(new PriorityComparer())
             {
                 (0, Start)
             };
@@ -136,23 +142,27 @@ public class Day16 : IDay
                         var h = Distance(nextPosition);
                         var f = g + h;
 
-                        Console.WriteLine($"F Values {parentCell.f} {f}");
+                        // Console.WriteLine($"F Values {parentCell.f} {f}");
                         ref var nextCell = ref Cells[nextPosition.X, nextPosition.Y];
 
                         if (nextCell.f == int.MaxValue || nextCell.f > f)
                         {
-                            Console.WriteLine($"adding score {f} for {nextPosition} from {parent}");
+                            // Console.WriteLine($"adding score {f} for {nextPosition} from {parent}");
                             openList.Add((f, nextPosition));
                             nextCell.f = f;
                             nextCell.g = g;
                             nextCell.Heuristic = h;
                             nextCell.Parent = parent;
+                            nextCell.Orientation = direction;
                         }
+                        Print(closedList, parent, nextPosition);
                     }
                 }
             }
 
+            Console.WriteLine($"Failure: {Cells}\n\n{closedList}");
         }
+
         private void FollowPath()
         {
             var path = new Stack<Point>();
@@ -173,6 +183,30 @@ public class Day16 : IDay
                 var point = path.Pop();
                 Console.WriteLine($" -> {point}");
             }
+        }
+
+        private void Print(bool[,] closedList, Point parent, Point next)
+        {
+            var sb = new StringBuilder();
+            for (var y = 0; y < Bounds.Height; y++)
+            {
+                for (var x = 0; x < Bounds.Width; x++)
+                {
+                    var compPoint = new Point(x, y);
+                    if (!IsWalkable[x, y]) sb.Append('#');
+                    else if (compPoint.Equals(Start)) sb.Append('S');
+                    else if (compPoint.Equals(End)) sb.Append('E');
+                    else if (compPoint.Equals(parent)) sb.Append('O');
+                    else if (closedList[x, y]) sb.Append('X');
+                    else if (compPoint.Equals(next)) sb.Append('?');
+                    else sb.Append('.');
+                }
+                sb.Append('\n');
+            }
+            Console.Write(sb);
+            var cell = Cells[next.X, next.Y];
+            Console.WriteLine($"Next Cell: {cell.Parent}:{cell.Orientation} f:{cell.f} g:{cell.g} h:{cell.Heuristic}\n");
+            // Console.ReadKey();
         }
     }
 }
