@@ -9,6 +9,12 @@ Register B: 0
 Register C: 0
 
 Program: 0,1,5,4,3,0";
+    private string _example2 = @"Register A: 117440
+Register B: 0
+Register C: 0
+
+Program: 0,3,5,4,3,0";
+
 
     private readonly List<string> _input = [];
 
@@ -17,7 +23,7 @@ Program: 0,1,5,4,3,0";
         if (useExample)
         {
             Console.WriteLine("Using the example data");
-            _input.AddRange(_example.Split('\n'));
+            _input.AddRange(_example2.Split('\n'));
         }
         else
         {
@@ -35,44 +41,96 @@ Program: 0,1,5,4,3,0";
         var outBuffer = new List<int>();
 
         while (pointer < instructionSet.Count)
+        {
             switch (instructionSet[pointer])
             {
                 case 0:
                     adv(instructionSet[++pointer]);
+                    pointer++;
                     break;
                 case 1:
                     bxl(instructionSet[++pointer]);
+                    pointer++;
                     break;
                 case 2:
                     bst(instructionSet[++pointer]);
+                    pointer++;
                     break;
                 case 3:
-                    Console.WriteLine($"old pointer: {pointer}");
                     pointer = jnz(instructionSet[++pointer], pointer);
-                    Console.WriteLine($"new pointer: {pointer}");
                     break;
                 case 4:
-                    pointer++;
+                    pointer += 2;
                     bxc();
                     break;
                 case 5:
                     outBuffer.Add(Out(instructionSet[++pointer]));
+                    pointer++;
                     break;
                 case 6:
                     bdv(instructionSet[++pointer]);
+                    pointer++;
                     break;
                 case 7:
                     cdv(instructionSet[++pointer]);
+                    pointer++;
                     break;
                 default:
                     throw new InvalidOperationException($"no operation associated with {pointer}");
             }
+
+        }
         Console.WriteLine($"Output:\n{string.Join(',', outBuffer)}");
     }
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var commandString = _input[^1].Split(' ')[1];
+        SetRegisters();
+        var instructionSet = _input[^1].Split(' ')[1].Split(',').Select(int.Parse).ToList();
+        var pointer = 0;
+        var outBuffer = new List<int>();
+
+        while (pointer < instructionSet.Count)
+        {
+            switch (instructionSet[pointer])
+            {
+                case 0:
+                    adv(instructionSet[++pointer]);
+                    pointer++;
+                    break;
+                case 1:
+                    bxl(instructionSet[++pointer]);
+                    pointer++;
+                    break;
+                case 2:
+                    bst(instructionSet[++pointer]);
+                    pointer++;
+                    break;
+                case 3:
+                    pointer = jnz(instructionSet[++pointer], pointer);
+                    break;
+                case 4:
+                    pointer += 2;
+                    bxc();
+                    break;
+                case 5:
+                    outBuffer.Add(Out(instructionSet[++pointer]));
+                    pointer++;
+                    break;
+                case 6:
+                    bdv(instructionSet[++pointer]);
+                    pointer++;
+                    break;
+                case 7:
+                    cdv(instructionSet[++pointer]);
+                    pointer++;
+                    break;
+                default:
+                    throw new InvalidOperationException($"no operation associated with {pointer}");
+            }
+
+        }
     }
 
     private Dictionary<char, int> Registers { get; set; } = [];
@@ -92,10 +150,7 @@ Program: 0,1,5,4,3,0";
     {
         var numerator = Registers['A'];
         if (operand <= 3 || operand == 7)
-        {
             Registers[registerIndex] = numerator / (int)Math.Pow(2, operand);
-            Console.WriteLine($"New value at 'A': {Registers['A']}");
-        }
         else if (operand == 4)
             Registers[registerIndex] = 1;
         else if (operand == 5)
@@ -135,7 +190,6 @@ Program: 0,1,5,4,3,0";
     private int jnz(int operand, int pointer)
     {
         if (Registers['A'] == 0) return ++pointer;
-        Console.WriteLine($"setting pointer ({pointer}) to {operand}");
         return operand;
     }
 
@@ -149,10 +203,7 @@ Program: 0,1,5,4,3,0";
         if (operand <= 3 || operand == 7)
             return operand;
         else if (operand == 4)
-        {
-            Console.WriteLine($"Out buffering for operand: {Registers['A'] % 8}");
             return Registers['A'] % 8;
-        }
         else if (operand == 5)
             return Registers['B'] % 8;
         else if (operand == 6)
