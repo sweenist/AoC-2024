@@ -1,4 +1,3 @@
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using AdventOfCode2024.Types;
 using AdventOfCode2024.Utility;
@@ -32,13 +31,13 @@ public class Day16 : IDay
         if (useExample)
         {
             Console.WriteLine("Using the example data");
-            input = [.. _example.Split('\n')];
+            input = [.. _example.Split('\n').Select(x => x.TrimEnd())];
         }
         else
         {
             var inputFile = $"inputData/{GetType().Name}.txt";
             using var sr = new StreamReader(inputFile);
-            input = [.. sr.ReadToEnd().Split('\n')];
+            input = [.. sr.ReadToEnd().Split('\n').Select(x => x.TrimEnd())];
         }
         _maze = new Maze(input);
     }
