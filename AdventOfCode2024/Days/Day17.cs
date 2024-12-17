@@ -9,7 +9,7 @@ Register B: 0
 Register C: 0
 
 Program: 0,1,5,4,3,0";
-    private string _example2 = @"Register A: 117440
+    private string _example2 = @"egister A: 2024
 Register B: 0
 Register C: 0
 
@@ -88,49 +88,57 @@ Program: 0,3,5,4,3,0";
         var commandString = _input[^1].Split(' ')[1];
         SetRegisters();
         var instructionSet = _input[^1].Split(' ')[1].Split(',').Select(int.Parse).ToList();
-        var pointer = 0;
-        var outBuffer = new List<int>();
-
-        while (pointer < instructionSet.Count)
+        for (var a = 512; a < 4096; a++)
         {
-            switch (instructionSet[pointer])
-            {
-                case 0:
-                    adv(instructionSet[++pointer]);
-                    pointer++;
-                    break;
-                case 1:
-                    bxl(instructionSet[++pointer]);
-                    pointer++;
-                    break;
-                case 2:
-                    bst(instructionSet[++pointer]);
-                    pointer++;
-                    break;
-                case 3:
-                    pointer = jnz(instructionSet[++pointer], pointer);
-                    break;
-                case 4:
-                    pointer += 2;
-                    bxc();
-                    break;
-                case 5:
-                    outBuffer.Add(Out(instructionSet[++pointer]));
-                    pointer++;
-                    break;
-                case 6:
-                    bdv(instructionSet[++pointer]);
-                    pointer++;
-                    break;
-                case 7:
-                    cdv(instructionSet[++pointer]);
-                    pointer++;
-                    break;
-                default:
-                    throw new InvalidOperationException($"no operation associated with {pointer}");
-            }
+            var pointer = 0;
+            Registers['A'] = a;
+            var outBuffer = new List<int>();
 
+            while (pointer < instructionSet.Count)
+            {
+                switch (instructionSet[pointer])
+                {
+                    case 0:
+                        adv(instructionSet[++pointer]);
+                        pointer++;
+                        break;
+                    case 1:
+                        bxl(instructionSet[++pointer]);
+                        pointer++;
+                        break;
+                    case 2:
+                        bst(instructionSet[++pointer]);
+                        pointer++;
+                        break;
+                    case 3:
+                        pointer = jnz(instructionSet[++pointer], pointer);
+                        break;
+                    case 4:
+                        pointer += 2;
+                        bxc();
+                        break;
+                    case 5:
+                        outBuffer.Add(Out(instructionSet[++pointer]));
+                        pointer++;
+                        break;
+                    case 6:
+                        bdv(instructionSet[++pointer]);
+                        pointer++;
+                        break;
+                    case 7:
+                        cdv(instructionSet[++pointer]);
+                        pointer++;
+                        break;
+                    default:
+                        throw new InvalidOperationException($"no operation associated with {pointer}");
+                }
+
+            }
+            if (outBuffer.SequenceEqual([5, 5, 3, 0]))
+                Console.WriteLine($"A: {a} -> {string.Join(',', outBuffer)}");
         }
+
+        Console.WriteLine(commandString);
     }
 
     private Dictionary<char, int> Registers { get; set; } = [];
