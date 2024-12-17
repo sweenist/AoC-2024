@@ -23,6 +23,24 @@ public class Day16 : IDay
 #S..#.....#...#
 ###############";
 
+    private string _example2 = @"#################
+#...#...#...#..E#
+#.#.#.#.#.#.#.#.#
+#.#.#.#...#...#.#
+#.#.#.#.###.#.#.#
+#...#.#.#.....#.#
+#.#.#.#.#.#####.#
+#.#...#.#.#.....#
+#.#.#####.#.###.#
+#.#.#.......#...#
+#.#.###.#####.###
+#.#.#...#.....#.#
+#.#.#.#####.###.#
+#.#.#.........#.#
+#.#.#.#########.#
+#S#.............#
+#################";
+
     private readonly Maze _maze;
 
     public Day16(bool useExample = false)
@@ -44,7 +62,9 @@ public class Day16 : IDay
 
     public void Part1()
     {
-        _maze.Traverse();
+        var result = _maze.Traverse();
+        Console.WriteLine($"Found {result.Count} paths");
+
     }
 
     public void Part2()
@@ -104,8 +124,9 @@ public class Day16 : IDay
             return Math.Abs(current.X - End.X) + Math.Abs(current.Y - End.Y);
         }
 
-        public void Traverse()
+        public List<List<Actor>> Traverse()
         {
+            var completedPaths = new List<List<Actor>>();
             var closedList = new bool[Bounds.Width, Bounds.Height];
             var openList = new SortedSet<(int FScore, Point Position)>(new PriorityComparer())
             {
@@ -129,13 +150,14 @@ public class Day16 : IDay
                     {
                         ref var cell = ref Cells[nextPosition.X, nextPosition.Y];
                         cell.Parent = parent;
-                        FollowPath();
-                        return;
+                        completedPaths.Add(FollowPath());
+                        continue;
                     }
 
                     if (!closedList[nextPosition.X, nextPosition.Y]
                         && IsWalkable[nextPosition.X, nextPosition.Y])
                     {
+                        var orientation = Vector.Delta(nextPosition, parent);
                         ref var parentCell = ref Cells[parent.X, parent.Y];
                         var g = parentCell.g + 1;
                         var h = Distance(nextPosition);
@@ -154,34 +176,53 @@ public class Day16 : IDay
                             nextCell.Parent = parent;
                             nextCell.Orientation = direction;
                         }
-                        Print(closedList, parent, nextPosition);
+                        // Print(closedList, parent, nextPosition);
                     }
                 }
             }
-
-            Console.WriteLine($"Failure: {Cells}\n\n{closedList}");
+            Print(closedList, new Point(-1, -1), new Point(-1, -1));
+            return completedPaths;
         }
 
-        private void FollowPath()
+        private List<Actor> FollowPath()
         {
-            var path = new Stack<Point>();
-            var row = End.Y;
-            var column = End.X;
+            var path = new List<Actor>();
+            var y = End.Y;
+            var x = End.X;
 
-            while (!(Cells[column, row].Parent.X == column && Cells[column, row].Parent.Y == row))
+            while (!(Cells[x, y].Parent.X == x && Cells[x, y].Parent.Y == y))
             {
-                path.Push(new Point(column, row));
-                var nextParent = Cells[column, row].Parent;
-                row = nextParent.Y;
-                column = nextParent.X;
+                var point = new Point(x, y);
+                var nextParent = Cells[x, y].Parent;
+                var pathSegment = new Actor(point, new Vector(x - nextParent.X, y - nextParent.Y));
+
+                path.Add(pathSegment);
+                y = nextParent.Y;
+                x = nextParent.X;
+
             }
 
-            path.Push(new Point(column, row));
-            while (path.Count > 0)
+            path.Add(new Actor(new Point(x, y), Vector.East));
+
+            Print([.. path]);
+
+            var currentDirection = Vector.Zero;
+            var turnCount = 0;
+            var steps = path.Count;
+
+            foreach (var step in path)
             {
-                var point = path.Pop();
-                Console.WriteLine($" -> {point}");
+                if (currentDirection == Vector.Zero)
+                    currentDirection = step.Direction;
+                if (currentDirection != step.Direction)
+                {
+                    currentDirection = step.Direction;
+                    turnCount++;
+                }
+                if (step.Location == Start) turnCount++;
             }
+            Console.WriteLine($"Path yielded a score of {steps + (turnCount * 1000)}");
+            return path;
         }
 
         private void Print(bool[,] closedList, Point parent, Point next)
@@ -198,13 +239,40 @@ public class Day16 : IDay
                     else if (compPoint.Equals(parent)) sb.Append('O');
                     else if (closedList[x, y]) sb.Append('X');
                     else if (compPoint.Equals(next)) sb.Append('?');
-                    else sb.Append('.');
+                    else sb.Append(' ');
                 }
                 sb.Append('\n');
             }
             Console.Write(sb);
-            var cell = Cells[next.X, next.Y];
-            Console.WriteLine($"Next Cell: {cell.Parent}:{cell.Orientation} f:{cell.f} g:{cell.g} h:{cell.Heuristic}\n");
+            // var cell = Cells[next.X, next.Y];
+            // Console.WriteLine($"Next Cell: {cell.Parent}:{cell.Orientation} f:{cell.f} g:{cell.g} h:{cell.Heuristic}\n");
+            // Console.ReadKey();
+        }
+
+        private void Print(List<Actor> path)
+        {
+            var sb = new StringBuilder();
+            var directions = new Dictionary<Vector, char>{
+                { Vector.North, '^'},
+                { Vector.East, '>'},
+                { Vector.South, 'v'},
+                { Vector.West, '<'},
+            };
+            for (var y = 0; y < Bounds.Height; y++)
+            {
+                for (var x = 0; x < Bounds.Width; x++)
+                {
+                    var compPoint = new Point(x, y);
+                    var step = path.Find(x => x.Location == compPoint);
+                    if (!IsWalkable[x, y]) sb.Append('#');
+                    else if (compPoint.Equals(Start)) sb.Append('S');
+                    else if (compPoint.Equals(End)) sb.Append('E');
+                    else if (compPoint.Equals(step?.Location)) sb.Append(directions[step.Direction]);
+                    else sb.Append(' ');
+                }
+                sb.Append('\n');
+            }
+            Console.Write(sb);
             // Console.ReadKey();
         }
     }

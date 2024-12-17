@@ -40,6 +40,8 @@ public struct Vector(int X, int Y, int? Z = null) : ICoordinate
     public static bool operator ==(Vector a, Vector b) => a.X == b.X && a.Y == b.Y;
     public static bool operator !=(Vector a, Vector b) => a.X != b.X || a.Y != b.Y;
 
+    public static Vector Delta(ICoordinate a, ICoordinate b) => new(a.X - b.X, a.Y - b.Y);
+
     public static Vector Clockwise(Vector v) => new(-v.Y, v.X);
 
     public override bool Equals([NotNullWhen(true)] object? obj)
