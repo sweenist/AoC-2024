@@ -128,7 +128,7 @@ public class Day16 : IDay
         {
             var completedPaths = new List<List<Actor>>();
             var closedList = new bool[Bounds.Width, Bounds.Height];
-            var openList = new SortedSet<(int FScore, Point Position)>(new PriorityComparer())
+            var openList = new SortedSet<(int FScore, Actor Position)>(new PriorityComparer())
             {
                 (0, Start)
             };

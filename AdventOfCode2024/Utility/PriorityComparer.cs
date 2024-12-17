@@ -1,15 +1,16 @@
+using AdventOfCode2024.Types;
 using AdventOfCode2024.Utility.Math;
 
 namespace AdventOfCode2024.Utility;
 
-public class PriorityComparer : IComparer<(int, Point)>
+public class PriorityComparer : IComparer<(int, Actor)>
 {
-    public int Compare((int, Point) x, (int, Point) y)
+    public int Compare((int, Actor) x, (int, Actor) y)
     {
         var result = x.Item1.CompareTo(y.Item1);
 
         if (result == 0)
-            return x.Item2.Equals(y.Item2) ? 0 : -1;
+            return x.Item2.Location.CompareTo(y.Item2.Location);
         return result;
     }
 }
