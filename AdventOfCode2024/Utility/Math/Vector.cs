@@ -8,7 +8,7 @@ namespace AdventOfCode2024.Utility.Math;
 /// <param name="Z">(Optional) Depth component.</param>
 #pragma warning disable CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
 #pragma warning disable CS0661
-public struct Vector(int X, int Y, int? Z = null) : ICoordinate
+public struct Vector(int X, int Y, int? Z = null) : ICoordinate, IComparable<Vector>
 #pragma warning restore CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
 #pragma warning restore CS0661
 {
@@ -55,6 +55,13 @@ public struct Vector(int X, int Y, int? Z = null) : ICoordinate
     public override readonly string ToString()
     {
         return $"Vector:<{X}, {Y}{(Z.HasValue ? $", {Z}" : "")}>";
+    }
+
+    public int CompareTo(Vector other)
+    {
+        if (X < other.X) return -1;
+        else if (X > other.X) return 1;
+        else return Y.CompareTo(other.Y);
     }
 }
 

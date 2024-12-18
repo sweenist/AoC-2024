@@ -24,52 +24,59 @@ public class Day16 : IDay
 #S..#.....#...#
 ###############";
 
-    private string _example2 = @"#################
-#...#...#...#..E#
-#.#.#.#.#.#.#.#.#
-#.#.#.#...#...#.#
-#.#.#.#.###.#.#.#
-#...#.#.#.....#.#
-#.#.#.#.#.#####.#
-#.#...#.#.#.....#
-#.#.#####.#.###.#
-#.#.#.......#...#
-#.#.###.#####.###
-#.#.#...#.....#.#
-#.#.#.#####.###.#
-#.#.#.........#.#
-#.#.#.#########.#
-#S#.............#
-#################";
+    //     private string _example2 = @"#################
+    // #...#...#...#..E#
+    // #.#.#.#.#.#.#.#.#
+    // #.#.#.#...#...#.#
+    // #.#.#.#.###.#.#.#
+    // #...#.#.#.....#.#
+    // #.#.#.#.#.#####.#
+    // #.#...#.#.#.....#
+    // #.#.#####.#.###.#
+    // #.#.#.......#...#
+    // #.#.###.#####.###
+    // #.#.#...#.....#.#
+    // #.#.#.#####.###.#
+    // #.#.#.........#.#
+    // #.#.#.#########.#
+    // #S#.............#
+    // #################";
 
+    private readonly string[] _input;
     private readonly Maze _maze;
 
     public Day16(bool useExample = false)
     {
-        string[] input;
         if (useExample)
         {
             Console.WriteLine("Using the example data");
-            input = [.. _example2.Split('\n').Select(x => x.TrimEnd())];
+            _input = [.. _example.Split('\n').Select(x => x.TrimEnd())];
         }
         else
         {
             var inputFile = $"inputData/{GetType().Name}.txt";
             using var sr = new StreamReader(inputFile);
-            input = [.. sr.ReadToEnd().Split('\n').Select(x => x.TrimEnd())];
+            _input = [.. sr.ReadToEnd().Split('\n').Select(x => x.TrimEnd())];
         }
-        _maze = new Maze(input);
+        _maze = new Maze(_input);
     }
 
     public void Part1()
     {
-        var result = _maze.Traverse();
+        var (paths, turns) = _maze.Traverse();
+        var result = paths.Count + turns * 1000;
         Console.WriteLine($"Best reindeer track score is {result}");
     }
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var (round1, _) = _maze.Traverse();
+        var maze = new Maze(_input);
+        maze.Configure(_input, true);
+        var (round2, _) = maze.Traverse(findGoodSeats: true);
+        var result = round1.Select(x => x.Location).Concat(round2.Select(x => x.Location)).Distinct().Count();
+
+        Console.WriteLine($"The number of paths around the best seats are {result}");
     }
 
     private struct Cell(Actor parent)
@@ -90,29 +97,7 @@ public class Day16 : IDay
             var width = input[0].Length;
 
             Bounds = new Boundary(height, width);
-            IsWalkable = new bool[width, height];
-            Cells = new Cell[width, height];
-
-            for (int y = 0; y < height; y++)
-                for (int x = 0; x < height; x++)
-                {
-                    var cell = input[y][x];
-                    IsWalkable[x, y] = cell != '#';
-                    Cells[x, y] = new Cell(new Actor(new Point(-1, -1), Vector.Zero));
-
-                    if (cell == 'S')
-                    {
-                        Start = new Point(x, y);
-                        Reindeer = new Actor(Start, Vector.East);
-                        Cells[x, y].Parent = Reindeer;
-                        Cells[x, y].f = 0;
-                        Cells[x, y].g = 0;
-                        Cells[x, y].Heuristic = 0;
-                        Cells[x, y].Turns = 0;
-                    }
-                    if (cell == 'E')
-                        End = new Point(x, y);
-                }
+            Configure(input);
         }
 
         public bool[,] IsWalkable { get; set; }
@@ -122,18 +107,51 @@ public class Day16 : IDay
         public Point End { get; set; }
         public Actor Reindeer { get; set; }
 
+        public void Configure(string[] input, bool backTrack = false)
+        {
+            var startChar = backTrack ? 'E' : 'S';
+            var endChar = backTrack ? 'S' : 'E';
+            IsWalkable = new bool[Bounds.Width, Bounds.Height];
+            Cells = new Cell[Bounds.Width, Bounds.Height];
+
+            for (int y = 0; y < Bounds.Height; y++)
+                for (int x = 0; x < Bounds.Width; x++)
+                {
+                    var cell = input[y][x];
+                    IsWalkable[x, y] = cell != '#';
+                    Cells[x, y] = new Cell(new Actor(new Point(-1, -1), Vector.Zero));
+
+                    if (cell == startChar)
+                    {
+                        Start = new Point(x, y);
+                        Reindeer = new Actor(Start, Vector.East);
+                        Cells[x, y].Parent = Reindeer;
+                        Cells[x, y].f = 0;
+                        Cells[x, y].g = 0;
+                        Cells[x, y].Heuristic = 0;
+                        Cells[x, y].Turns = 0;
+                    }
+                    else if (cell == endChar)
+                        End = new Point(x, y);
+                }
+        }
+
         public int Distance(Point current)
         {
             return Math.Abs(current.X - End.X) + Math.Abs(current.Y - End.Y);
         }
 
-        public int Traverse()
+        public (List<Actor>, int Turns) Traverse(bool findGoodSeats = false)
         {
             var closedList = new bool[Bounds.Width, Bounds.Height];
-            var openList = new SortedSet<(int FScore, Actor Position)>(new PriorityComparer())
-            {
-                (0, Reindeer)
-            };
+            var startingPoints = findGoodSeats
+                ? new[] { (0, new Actor(Start, Vector.East)),
+                          (0, new Actor(Start, Vector.North)),
+                          (0, new Actor(Start, Vector.South)),
+                          (0, new Actor(Start, Vector.West)) }
+                : [(0, Reindeer)];
+
+            var openList = new SortedSet<(int FScore, Actor Reindeer)>(startingPoints, new PriorityComparer());
 
             while (openList.Count > 0)
             {
@@ -187,7 +205,7 @@ public class Day16 : IDay
             throw new Exception("Could not find a reasonable path");
         }
 
-        private int FollowPath()
+        private (List<Actor>, int Turns) FollowPath()
         {
             var path = new List<Actor>();
             var y = End.Y;
@@ -208,7 +226,7 @@ public class Day16 : IDay
             // path.Add(new Actor(new Point(x, y), Vector.East)); //last point is start position
 
             Print([.. path]);
-            return path.Count + Cells[End.X, End.Y].Turns * 1000;
+            return (path, Turns: Cells[End.X, End.Y].Turns);
         }
 
         private void Print(bool[,] closedList, Actor parent, Point next)
