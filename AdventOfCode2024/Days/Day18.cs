@@ -72,7 +72,37 @@ public class Day18 : IDay
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var corruptedBytes = _input.Select(x => x.Split(',').Select(int.Parse).ToList())
+                                   .Select(p => new Point(p[0], p[1]))
+                                   .ToList();
+
+        var fallingCount = _fallingBytes + 1;
+        var initialFallingBytes = corruptedBytes.Take(fallingCount).ToList();
+        var map = new Map(initialFallingBytes, _exit);
+        var shortestPath = map.Traverse();
+
+        var firstBlockagePoint = new Point(-1, -1);
+        var highBytes = corruptedBytes.Count - fallingCount;
+        var lowBytes = 0;
+
+        while (true)
+        {
+            var midRemaining = lowBytes + (highBytes - lowBytes) / 2;
+            if (highBytes < lowBytes)
+            {
+                firstBlockagePoint = corruptedBytes[fallingCount + midRemaining - 1];
+                break;
+            }
+            var newBytes = corruptedBytes.Take(fallingCount + midRemaining).ToList();
+
+            map.ReInitialize(newBytes);
+            shortestPath = map.Traverse();
+
+            if (shortestPath.Count > 0) lowBytes = midRemaining + 1;
+            else highBytes = midRemaining - 1;
+            round++;
+        }
+        Console.WriteLine($"The first blocking byte is {firstBlockagePoint}");
     }
 
     private record Map
@@ -97,6 +127,18 @@ public class Day18 : IDay
         public Cell[,] Paths { get; set; }
         public Point Start { get; set; } = new Point(0, 0);
         public Point End { get; set; }
+
+        public void ReInitialize(List<Point> corruptedBytes)
+        {
+            Corrupted = new bool[Bounds.Width, Bounds.Height];
+            foreach (var fallingByte in corruptedBytes)
+                Corrupted[fallingByte.X, fallingByte.Y] = true;
+            for (var x = 0; x < Bounds.Width; x++)
+                for (var y = 0; y < Bounds.Width; y++)
+                    Paths[x, y] = new Cell(new Point(x, y));
+
+            Paths[0, 0] = new Cell(new Point(0, 0)) { TotalScore = 0, Accumulated = 0, Heuristic = 0 };
+        }
 
         public List<Point> Traverse()
         {
@@ -147,8 +189,9 @@ public class Day18 : IDay
                     }
                 }
             }
-            throw new Exception("Could not find a reasonable path");
+            return [];
         }
+
         private List<Point> FollowPath()
         {
             var path = new List<Point>();
@@ -188,8 +231,6 @@ public class Day18 : IDay
             Console.Write(sb);
             var cell = Paths[next.X, next.Y];
             Console.WriteLine($"Next Cell: {cell.Parent}: f:{cell.TotalScore} g:{cell.Accumulated} h:{cell.Heuristic}\n");
-            // Console.ReadKey();
         }
-
     }
 }
