@@ -79,12 +79,8 @@ public class Day16 : IDay
         Console.WriteLine($"The number of paths around the best seats are {result}");
     }
 
-    private struct Cell(Actor parent)
+    private record TurnCell(Actor parent) : Cell<Actor>(parent)
     {
-        public Actor Parent { get; set; } = parent;
-        public int f = int.MaxValue;
-        public int g = int.MaxValue;
-        public int Heuristic { get; set; } = int.MaxValue;
         public int Turns { get; set; } = 0;
     }
 
@@ -96,11 +92,13 @@ public class Day16 : IDay
             var width = input[0].Length;
 
             Bounds = new Boundary(height, width);
+            IsWalkable = new bool[Bounds.Width, Bounds.Height];
+            Cells = new TurnCell[Bounds.Width, Bounds.Height];
             Configure(input);
         }
 
         public bool[,] IsWalkable { get; set; }
-        public Cell[,] Cells { get; set; }
+        public TurnCell[,] Cells { get; set; }
         public Boundary Bounds { get; set; }
         public Point Start { get; set; }
         public Point End { get; set; }
@@ -110,21 +108,21 @@ public class Day16 : IDay
             var startChar = backTrack ? 'E' : 'S';
             var endChar = backTrack ? 'S' : 'E';
             IsWalkable = new bool[Bounds.Width, Bounds.Height];
-            Cells = new Cell[Bounds.Width, Bounds.Height];
+            Cells = new TurnCell[Bounds.Width, Bounds.Height];
 
             for (int y = 0; y < Bounds.Height; y++)
                 for (int x = 0; x < Bounds.Width; x++)
                 {
                     var cell = input[y][x];
                     IsWalkable[x, y] = cell != '#';
-                    Cells[x, y] = new Cell(new Actor(new Point(-1, -1), Vector.Zero));
+                    Cells[x, y] = new TurnCell(new Actor(new Point(-1, -1), Vector.Zero));
 
                     if (cell == startChar)
                     {
                         Start = new Point(x, y);
                         Cells[x, y].Parent = new Actor(Start, Vector.East);
-                        Cells[x, y].f = 0;
-                        Cells[x, y].g = 0;
+                        Cells[x, y].TotalScore = 0;
+                        Cells[x, y].Accumulated = 0;
                         Cells[x, y].Heuristic = 0;
                         Cells[x, y].Turns = 0;
                     }
@@ -178,18 +176,18 @@ public class Day16 : IDay
                     {
                         ref var parentCell = ref Cells[parent.Location.X, parent.Location.Y];
                         var turns = parentCell.Turns + (isTurning ? 1 : 0);
-                        var g = parentCell.g + 1;
-                        var h = Distance(nextPosition);
+                        var g = parentCell.Accumulated + 1;
+                        var h = nextPosition.ManhattanDistance(End);
                         var f = g + h + turns * 1000;
 
                         ref var nextCell = ref Cells[nextPosition.X, nextPosition.Y];
 
-                        if (nextCell.f == int.MaxValue || nextCell.f > f)
+                        if (nextCell.TotalScore == int.MaxValue || nextCell.TotalScore > f)
                         {
                             var updatedReindeer = new Actor(nextPosition, direction); //possibly need to invert direction vector
                             openList.Add((f, updatedReindeer));
-                            nextCell.f = f;
-                            nextCell.g = g;
+                            nextCell.TotalScore = f;
+                            nextCell.Accumulated = g;
                             nextCell.Heuristic = h;
                             nextCell.Parent = parent;
                             nextCell.Turns = turns;
@@ -246,7 +244,7 @@ public class Day16 : IDay
             }
             Console.Write(sb);
             var cell = Cells[next.X, next.Y];
-            Console.WriteLine($"Next Cell: {cell.Parent.Location}:{cell.Parent.Direction} f:{cell.f} g:{cell.g} h:{cell.Heuristic} turns: {cell.Turns}\n");
+            Console.WriteLine($"Next Cell: {cell.Parent.Location}:{cell.Parent.Direction} f:{cell.TotalScore} g:{cell.Accumulated} h:{cell.Heuristic} turns: {cell.Turns}\n");
             // Console.ReadKey();
         }
 
