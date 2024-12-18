@@ -42,8 +42,6 @@ public struct Vector(int X, int Y, int? Z = null) : ICoordinate
 
     public static Vector Delta(ICoordinate a, ICoordinate b) => new(a.X - b.X, a.Y - b.Y);
 
-    public static Vector Clockwise(Vector v) => new(-v.Y, v.X);
-
     public override bool Equals([NotNullWhen(true)] object? obj)
     {
         if (obj is not Vector)
@@ -66,6 +64,14 @@ public static class VectorExtensions
 
     public static Vector Clockwise(this Vector v) => new(-v.Y, v.X);
     public static Vector AntiClockwise(this Vector v) => new(v.Y, -v.X);
+
+    public static Dictionary<Vector, char> MapTokens => new()
+    {
+        { Vector.North, '^'},
+        { Vector.East, '>'},
+        { Vector.South, 'v'},
+        { Vector.West, '<'},
+    };
 }
 
 
