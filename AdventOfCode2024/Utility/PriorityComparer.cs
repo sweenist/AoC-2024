@@ -1,20 +1,18 @@
-using AdventOfCode2024.Types;
-using AdventOfCode2024.Utility.Math;
-
 namespace AdventOfCode2024.Utility;
 
-public class PriorityComparer : IComparer<(int, Actor)>
+public class PriorityComparer<T> : IComparer<T> where T : Tuple<IComparable, IComparable>
 {
-    public int Compare((int, Actor) x, (int, Actor) y)
-    {
-        var result = x.Item1.CompareTo(y.Item1);
+    // public int Compare((int, IComparable) x, (int, IComparable) y)
+    // {
+    //     var result = x.Item1.CompareTo(y.Item1);
 
-        if (result == 0)
-        {
-            result = x.Item2.Location.CompareTo(y.Item2.Location);
-            if (result == 0)
-                return x.Item2.Direction.CompareTo(y.Item2.Direction);
-        }
-        return result;
+    //     return result == 0 ? x.Item2.CompareTo(y.Item2) : result;
+    // }
+
+    public int Compare(T? x, T? y)
+    {
+        var result = x?.Item1.CompareTo(y?.Item1) ?? 0;
+
+        return result == 0 ? (x?.Item2.CompareTo(y?.Item2) ?? 0) : result;
     }
 }

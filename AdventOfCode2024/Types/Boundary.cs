@@ -2,10 +2,21 @@
 using AdventOfCode2024.Utility.Math;
 
 namespace AdventOfCode2024.Types;
-public record Boundary(int Height, int Width)
+public record Boundary
 {
-    public int Height { get; set; } = Height;
-    public int Width { get; set; } = Width;
+    public Boundary(int height, int width)
+    {
+        Height = height;
+        Width = width;
+    }
+    public Boundary(Point dimension)
+    {
+        Height = dimension.Y + 1;
+        Width = dimension.X + 1;
+    }
+
+    public int Height { get; set; }
+    public int Width { get; set; }
     public int BoundX => Width - 1;
     public int BoundY => Height - 1;
 

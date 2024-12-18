@@ -151,7 +151,7 @@ public class Day16 : IDay
                           (0, new Actor(Start, Vector.West)) }
                 : [(0, Reindeer)];
 
-            var openList = new SortedSet<(int FScore, Actor Reindeer)>(startingPoints, new PriorityComparer());
+            var openList = new SortedSet<(int FScore, IComparable Reindeer)>(startingPoints, new PriorityComparer());
 
             while (openList.Count > 0)
             {

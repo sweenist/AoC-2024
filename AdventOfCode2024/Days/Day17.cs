@@ -4,11 +4,11 @@ namespace AdventOfCode2024.Days;
 
 public class Day17 : IDay
 {
-    private string _example = @"Register A: 729
-Register B: 0
-Register C: 0
+    //     private string _example = @"Register A: 729
+    // Register B: 0
+    // Register C: 0
 
-Program: 0,1,5,4,3,0";
+    // Program: 0,1,5,4,3,0";
     private string _example2 = @"egister A: 2024
 Register B: 0
 Register C: 0
