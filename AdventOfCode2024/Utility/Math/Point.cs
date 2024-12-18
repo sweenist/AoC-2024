@@ -48,7 +48,7 @@ public static class PointExtensions
         return p.X >= min.X && p.X <= max.X && p.Y >= min.Y && p.Y <= max.Y;
     }
 
-    public static int ManhattanDistance(this Point a, Point b) => System.Math.Abs(a.X - b.X) - System.Math.Abs(a.Y - b.Y);
+    public static int ManhattanDistance(this Point a, Point b) => System.Math.Abs(a.X - b.X) + System.Math.Abs(a.Y - b.Y);
 }
 
 public record PointPair(Point A, Point B)
