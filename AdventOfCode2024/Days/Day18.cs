@@ -100,7 +100,6 @@ public class Day18 : IDay
 
             if (shortestPath.Count > 0) lowBytes = midRemaining + 1;
             else highBytes = midRemaining - 1;
-            round++;
         }
         Console.WriteLine($"The first blocking byte is {firstBlockagePoint}");
     }
@@ -110,21 +109,21 @@ public class Day18 : IDay
         public Map(List<Point> corruptBytes, Point end)
         {
             Bounds = new Boundary(end);
-            Paths = new Cell[Bounds.Width, Bounds.Height];
+            Paths = new Cell<Point>[Bounds.Width, Bounds.Height];
             Corrupted = new bool[Bounds.Width, Bounds.Height];
             End = end;
             foreach (var fallingByte in corruptBytes)
                 Corrupted[fallingByte.X, fallingByte.Y] = true;
             for (var x = 0; x < Bounds.Width; x++)
                 for (var y = 0; y < Bounds.Width; y++)
-                    Paths[x, y] = new Cell(new Point(x, y));
+                    Paths[x, y] = new Cell<Point>(new Point(x, y));
 
-            Paths[0, 0] = new Cell(new Point(0, 0)) { TotalScore = 0, Accumulated = 0, Heuristic = 0 };
+            Paths[0, 0] = new Cell<Point>(new Point(0, 0)) { TotalScore = 0, Accumulated = 0, Heuristic = 0 };
         }
 
         public Boundary Bounds { get; set; }
         public bool[,] Corrupted { get; set; }
-        public Cell[,] Paths { get; set; }
+        public Cell<Point>[,] Paths { get; set; }
         public Point Start { get; set; } = new Point(0, 0);
         public Point End { get; set; }
 
@@ -135,9 +134,9 @@ public class Day18 : IDay
                 Corrupted[fallingByte.X, fallingByte.Y] = true;
             for (var x = 0; x < Bounds.Width; x++)
                 for (var y = 0; y < Bounds.Width; y++)
-                    Paths[x, y] = new Cell(new Point(x, y));
+                    Paths[x, y] = new Cell<Point>(new Point(x, y));
 
-            Paths[0, 0] = new Cell(new Point(0, 0)) { TotalScore = 0, Accumulated = 0, Heuristic = 0 };
+            Paths[0, 0] = new Cell<Point>(new Point(0, 0)) { TotalScore = 0, Accumulated = 0, Heuristic = 0 };
         }
 
         public List<Point> Traverse()

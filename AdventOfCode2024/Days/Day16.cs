@@ -8,7 +8,7 @@ namespace AdventOfCode2024.Days;
 
 public class Day16 : IDay
 {
-    private string _example = @"###############
+    private readonly string _example = @"###############
 #.......#....E#
 #.#.###.#.###.#
 #.....#.#...#.#
@@ -85,8 +85,7 @@ public class Day16 : IDay
         public int f = int.MaxValue;
         public int g = int.MaxValue;
         public int Heuristic { get; set; } = int.MaxValue;
-        public int Turns { get; set; }
-        public Vector Orientation { get; set; } = Vector.Zero;
+        public int Turns { get; set; } = 0;
     }
 
     private record Maze
@@ -105,7 +104,6 @@ public class Day16 : IDay
         public Boundary Bounds { get; set; }
         public Point Start { get; set; }
         public Point End { get; set; }
-        public Actor Reindeer { get; set; }
 
         public void Configure(string[] input, bool backTrack = false)
         {
@@ -124,8 +122,7 @@ public class Day16 : IDay
                     if (cell == startChar)
                     {
                         Start = new Point(x, y);
-                        Reindeer = new Actor(Start, Vector.East);
-                        Cells[x, y].Parent = Reindeer;
+                        Cells[x, y].Parent = new Actor(Start, Vector.East);
                         Cells[x, y].f = 0;
                         Cells[x, y].g = 0;
                         Cells[x, y].Heuristic = 0;
@@ -149,7 +146,7 @@ public class Day16 : IDay
                           (0, new Actor(Start, Vector.North)),
                           (0, new Actor(Start, Vector.South)),
                           (0, new Actor(Start, Vector.West)) }.ToList()
-                : [(0, Reindeer)];
+                : [(0, new Actor(Start, Vector.East))];
 
             var openList = new SortedSet<(int FScore, Actor Reindeer)>(startingPoints, new PriorityComparer());
 
@@ -196,7 +193,6 @@ public class Day16 : IDay
                             nextCell.Heuristic = h;
                             nextCell.Parent = parent;
                             nextCell.Turns = turns;
-                            nextCell.Orientation = direction;
                         }
                         // Print(closedList, parent, nextPosition);
                     }
