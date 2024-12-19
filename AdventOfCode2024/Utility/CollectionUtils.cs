@@ -62,6 +62,27 @@ public static class CollectionUtils
         }
         return pairs;
     }
+    public static IEnumerable<List<string>> Split(this IEnumerable<string> source, Func<string, bool> predicate)
+    {
+        var list = new List<string>();
+
+        foreach (var element in source)
+        {
+            if (predicate(element))
+            {
+                if (list.Count > 0)
+                {
+                    yield return list;
+                    list = [];
+                }
+            }
+            else
+                list.Add(element);
+        }
+
+        if (list.Count > 0)
+            yield return list;
+    }
 
     public static int Product(this IEnumerable<int> set)
     {
