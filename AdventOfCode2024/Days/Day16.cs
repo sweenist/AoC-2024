@@ -131,11 +131,6 @@ public class Day16 : IDay
                 }
         }
 
-        public int Distance(Point current)
-        {
-            return Math.Abs(current.X - End.X) + Math.Abs(current.Y - End.Y);
-        }
-
         public (List<Actor>, int Turns) Traverse(bool findGoodSeats = false)
         {
             var closedList = new bool[Bounds.Width, Bounds.Height];
@@ -168,7 +163,7 @@ public class Day16 : IDay
                         ref var cell = ref Cells[nextPosition.X, nextPosition.Y];
                         cell.Parent = parent;
                         cell.Turns = parentCell.Turns;
-                        return FollowPath();
+                        return FollowPath(findGoodSeats);
                     }
 
                     if (!closedList[nextPosition.X, nextPosition.Y]
@@ -199,11 +194,12 @@ public class Day16 : IDay
             throw new Exception("Could not find a reasonable path");
         }
 
-        private (List<Actor>, int Turns) FollowPath()
+        private (List<Actor>, int Turns) FollowPath(bool findOtherPaths)
         {
             var path = new List<Actor>();
             var y = End.Y;
             var x = End.X;
+
 
             while (!(Cells[x, y].Parent.Location.X == x && Cells[x, y].Parent.Location.Y == y))
             {
@@ -218,7 +214,7 @@ public class Day16 : IDay
             }
 
             // path.Add(new Actor(new Point(x, y), Vector.East)); //last point is start position
-
+            if (findOtherPaths) PrintCells();
             Print([.. path]);
             return (path, Turns: Cells[End.X, End.Y].Turns);
         }
@@ -263,6 +259,26 @@ public class Day16 : IDay
                     else if (compPoint.Equals(End)) sb.Append('E');
                     else if (compPoint.Equals(step?.Location)) sb.Append(MapTokens[step.Direction]);
                     else sb.Append(' ');
+                }
+                sb.Append('\n');
+            }
+            Console.Write(sb);
+            // Console.ReadKey();
+        }
+
+        private void PrintCells()
+        {
+            var sb = new StringBuilder();
+
+            for (var y = 0; y < Bounds.Height; y++)
+            {
+                for (var x = 0; x < Bounds.Width; x++)
+                {
+                    if (Cells[x, y].TotalScore != int.MaxValue)
+                    {
+                        sb.Append(Cells[x, y]);
+                        sb.Append('\n');
+                    }
                 }
                 sb.Append('\n');
             }
