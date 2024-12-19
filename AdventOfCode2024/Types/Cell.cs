@@ -1,5 +1,3 @@
-using AdventOfCode2024.Utility.Math;
-
 namespace AdventOfCode2024.Types;
 
 public record Cell<T>(T Parent)

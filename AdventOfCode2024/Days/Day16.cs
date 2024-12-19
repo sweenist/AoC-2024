@@ -70,18 +70,19 @@ public class Day16 : IDay
 
     public void Part2()
     {
-        var (round1, _) = _maze.Traverse();
-        var maze = new Maze(_input);
-        maze.Configure(_input, true);
-        var (round2, _) = maze.Traverse(findGoodSeats: true);
-        var result = round1.Select(x => x.Location).Concat(round2.Select(x => x.Location)).Distinct().Count();
+        var (round1, _) = _maze.Traverse(findGoodSeats: true);
+        // var maze = new Maze(_input);
+        // maze.Configure(_input, true);
+        // var (round2, _) = maze.Traverse(findGoodSeats: true);
+        // var result = round1.Select(x => x.Location).Concat(round2.Select(x => x.Location)).Distinct().Count();
 
-        Console.WriteLine($"The number of paths around the best seats are {result}");
+        Console.WriteLine($"The number of paths around the best seats are {round1.Count}");
     }
 
-    private record TurnCell(Actor parent) : Cell<Actor>(parent)
+    private record TurnCell(Actor Parent) : Cell<Actor>(Parent)
     {
         public int Turns { get; set; } = 0;
+        public List<TurnCell> Neighbors { get; } = [];
     }
 
     private record Maze
@@ -134,12 +135,7 @@ public class Day16 : IDay
         public (List<Actor>, int Turns) Traverse(bool findGoodSeats = false)
         {
             var closedList = new bool[Bounds.Width, Bounds.Height];
-            var startingPoints = findGoodSeats
-                ? new[] { (0, new Actor(Start, Vector.East)),
-                          (0, new Actor(Start, Vector.North)),
-                          (0, new Actor(Start, Vector.South)),
-                          (0, new Actor(Start, Vector.West)) }.ToList()
-                : [(0, new Actor(Start, Vector.East))];
+            var startingPoints = new[] { (0, new Actor(Start, Vector.East)) }.ToList();
 
             var openList = new SortedSet<(int FScore, Actor Reindeer)>(startingPoints, new PriorityComparer());
 
@@ -160,26 +156,30 @@ public class Day16 : IDay
                     if (nextPosition == End)
                     {
                         var parentCell = Cells[parent.Location.X, parent.Location.Y];
-                        ref var cell = ref Cells[nextPosition.X, nextPosition.Y];
+                        var cell = Cells[nextPosition.X, nextPosition.Y];
                         cell.Parent = parent;
                         cell.Turns = parentCell.Turns;
+                        cell.Neighbors.Add(parentCell);
+
+                        parentCell.Neighbors.Add(cell);
                         return FollowPath(findGoodSeats);
                     }
 
                     if (!closedList[nextPosition.X, nextPosition.Y]
                         && IsWalkable[nextPosition.X, nextPosition.Y])
                     {
-                        ref var parentCell = ref Cells[parent.Location.X, parent.Location.Y];
+                        var parentCell = Cells[parent.Location.X, parent.Location.Y];
                         var turns = parentCell.Turns + (isTurning ? 1 : 0);
                         var g = parentCell.Accumulated + 1;
                         var h = nextPosition.ManhattanDistance(End);
                         var f = g + h + turns * 1000;
 
-                        ref var nextCell = ref Cells[nextPosition.X, nextPosition.Y];
+                        var nextCell = Cells[nextPosition.X, nextPosition.Y];
+                        parentCell.Neighbors.Add(nextCell);
 
                         if (nextCell.TotalScore == int.MaxValue || nextCell.TotalScore > f)
                         {
-                            var updatedReindeer = new Actor(nextPosition, direction); //possibly need to invert direction vector
+                            var updatedReindeer = new Actor(nextPosition, direction);
                             openList.Add((f, updatedReindeer));
                             nextCell.TotalScore = f;
                             nextCell.Accumulated = g;
@@ -197,6 +197,7 @@ public class Day16 : IDay
         private (List<Actor>, int Turns) FollowPath(bool findOtherPaths)
         {
             var path = new List<Actor>();
+            var cells = new HashSet<TurnCell>();
             var y = End.Y;
             var x = End.X;
 
@@ -209,14 +210,46 @@ public class Day16 : IDay
                 var pathSegment = new Actor(point, orientation);
 
                 path.Add(pathSegment);
+                cells.Add(Cells[x, y]);
                 x = nextParent.Location.X;
                 y = nextParent.Location.Y;
             }
 
-            // path.Add(new Actor(new Point(x, y), Vector.East)); //last point is start position
-            if (findOtherPaths) PrintCells();
+            if (findOtherPaths)
+            {
+                // PrintCells();
+                BuildAlternatePaths(cells);
+            }
             Print([.. path]);
-            return (path, Turns: Cells[End.X, End.Y].Turns);
+            return (path, Cells[End.X, End.Y].Turns);
+        }
+
+        private HashSet<TurnCell> BuildAlternatePaths(HashSet<TurnCell> happyPath)
+        {
+            var visited = new List<TurnCell>(happyPath);
+            foreach (var path in happyPath)
+            {
+                if (path.Neighbors.Count > 1)
+                {
+                    var possibilities = path.Neighbors.Where(x => !happyPath.Contains(x)).ToList();
+                    Console.WriteLine($"found possibilities path score:{path.TotalScore}: {string.Join("\n\t", possibilities)}");
+                    var newCells = possibilities.SelectMany(x => FindCandidates(x, happyPath, visited).ToList()).ToList();
+                }
+            }
+            return happyPath;
+        }
+
+        private static IEnumerable<TurnCell> FindCandidates(TurnCell cell, HashSet<TurnCell> pathCells, List<TurnCell> visited)
+        {
+            Console.WriteLine($"->{cell}");
+            var neighbourFiltered = cell.Neighbors.Where(c => !visited.Contains(c) && c.TotalScore <= cell.TotalScore).ToList();
+            foreach (var neighbour in neighbourFiltered)
+            {
+                visited.Add(neighbour);
+                if (!pathCells.Contains(neighbour))
+                    foreach (var candidate in FindCandidates(neighbour, pathCells, visited).ToList())
+                        yield return candidate;
+            }
         }
 
         private void Print(bool[,] closedList, Actor parent, Point next)
