@@ -218,7 +218,8 @@ public class Day16 : IDay
             if (findOtherPaths)
             {
                 // PrintCells();
-                BuildAlternatePaths(cells);
+                var newPath = BuildAlternatePaths(cells);
+                return (newPath.Select(x => x.Parent).ToList(), 0);
             }
             Print([.. path]);
             return (path, Cells[End.X, End.Y].Turns);
@@ -226,30 +227,50 @@ public class Day16 : IDay
 
         private HashSet<TurnCell> BuildAlternatePaths(HashSet<TurnCell> happyPath)
         {
-            var visited = new List<TurnCell>(happyPath);
+            var newSet = new HashSet<TurnCell>(happyPath);
             foreach (var path in happyPath)
             {
                 if (path.Neighbors.Count > 1)
                 {
                     var possibilities = path.Neighbors.Where(x => !happyPath.Contains(x)).ToList();
-                    Console.WriteLine($"found possibilities path score:{path.TotalScore}: {string.Join("\n\t", possibilities)}");
-                    var newCells = possibilities.SelectMany(x => FindCandidates(x, happyPath, visited).ToList()).ToList();
+                    // var newCells = possibilities.SelectMany(x => FindCandidates(x, happyPath, visited).ToList()).ToList();
+                    foreach (var candidate in possibilities)
+                    {
+                        var visited = new List<TurnCell>([path]);
+                        var chain = FindCandidates(candidate, happyPath, visited).ToList();
+                        newSet.UnionWith(chain);
+                    }
                 }
             }
-            return happyPath;
+            return newSet;
         }
 
-        private static IEnumerable<TurnCell> FindCandidates(TurnCell cell, HashSet<TurnCell> pathCells, List<TurnCell> visited)
+        private IEnumerable<TurnCell> FindCandidates(TurnCell cell, HashSet<TurnCell> pathCells, List<TurnCell> visited)
         {
-            Console.WriteLine($"->{cell}");
-            var neighbourFiltered = cell.Neighbors.Where(c => !visited.Contains(c) && c.TotalScore <= cell.TotalScore).ToList();
-            foreach (var neighbour in neighbourFiltered)
+            var connected = false;
+            while (!connected)
             {
-                visited.Add(neighbour);
-                if (!pathCells.Contains(neighbour))
-                    foreach (var candidate in FindCandidates(neighbour, pathCells, visited).ToList())
-                        yield return candidate;
+                visited.Add(cell);
+                var cellParent = cell.Parent.Location;
+                var nextCell = Cells[cellParent.X, cellParent.Y];
+                if (nextCell is null)
+                    break;
+                Console.WriteLine($"Valid cell {cell}");
+                cell = nextCell;
+                if (visited.Contains(cell)) yield break;
+                connected = pathCells.Contains(cell);
             }
+            if (!connected)
+            {
+                Console.WriteLine($"Cell with parent {cell.Parent} short circuited");
+                yield break;
+            }
+            foreach (var newStep in visited)
+            {
+                if (pathCells.Contains(newStep)) continue;
+                yield return newStep;
+            }
+
         }
 
         private void Print(bool[,] closedList, Actor parent, Point next)
