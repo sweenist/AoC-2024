@@ -5,143 +5,93 @@ using AdventOfCode2024.Utility.Math;
 
 namespace AdventOfCode2024.Days;
 
-public class Day18 : IDay
+public class Day20 : IDay
 {
-    private string _example = @"5,4
-4,2
-4,5
-3,0
-2,1
-6,3
-2,4
-1,5
-0,6
-3,3
-2,6
-5,1
-1,2
-5,5
-2,5
-6,5
-1,4
-0,4
-6,4
-1,1
-6,1
-1,0
-0,5
-1,6
-2,0";
+    private readonly string _example = @"###############
+#...#...#.....#
+#.#.#.#.#.###.#
+#S#...#.#.#...#
+#######.#.#.###
+#######.#.#...#
+#######.#.###.#
+###..E#...#...#
+###.#######.###
+#...###...#...#
+#.#####.#.###.#
+#.#...#.#.#...#
+#.#.#.#.#.#.###
+#...#...#...###
+###############";
 
-    private readonly List<string> _input = [];
-    private readonly Point _exit;
-    private readonly int _fallingBytes;
+    private readonly string[] _input = [];
 
-    public Day18(bool useExample = false)
+    public Day20(bool useExample = false)
     {
         if (useExample)
         {
             Console.WriteLine("Using the example data");
-            _input.AddRange(_example.Split(Environment.NewLine));
-            _exit = new Point(6, 6);
-            _fallingBytes = 12;
+            _input = _example.Split(Environment.NewLine);
         }
         else
         {
             var inputFile = $"inputData/{GetType().Name}.txt";
             using var sr = new StreamReader(inputFile);
-            _input.AddRange(sr.ReadToEnd().Split(Environment.NewLine));
-            _exit = new Point(70, 70);
-            _fallingBytes = 1024;
+            _input = sr.ReadToEnd().Split(Environment.NewLine);
         }
     }
 
     public void Part1()
     {
-        var corruptedBytes = _input.Take(_fallingBytes)
-                                    .Select(x => x.Split(',').Select(int.Parse).ToList())
-                                    .Select(p => new Point(p[0], p[1]))
-                                    .ToList();
+        var maze = new Map(_input);
+        var integralPath = maze.Traverse();
+        var cheats = maze.Cheat(integralPath).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
+        var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
+        Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
+        foreach (var kvp in cheats)
+            Console.WriteLine($"\t{kvp.Value} save {kvp.Key} seconds");
 
-        var Map = new Map(corruptedBytes, _exit);
-        var shortestPath = Map.Traverse();
 
-        Console.WriteLine($"The shortest path through falling bytes is {shortestPath.Count}");
     }
 
     public void Part2()
     {
-        var corruptedBytes = _input.Select(x => x.Split(',').Select(int.Parse).ToList())
-                                   .Select(p => new Point(p[0], p[1]))
-                                   .ToList();
-
-        var fallingCount = _fallingBytes + 1;
-        var initialFallingBytes = corruptedBytes.Take(fallingCount).ToList();
-        var map = new Map(initialFallingBytes, _exit);
-        var shortestPath = map.Traverse();
-
-        var firstBlockagePoint = new Point(-1, -1);
-        var highBytes = corruptedBytes.Count - fallingCount;
-        var lowBytes = 0;
-
-        while (true)
-        {
-            var midRemaining = lowBytes + (highBytes - lowBytes) / 2;
-            if (highBytes < lowBytes)
-            {
-                firstBlockagePoint = corruptedBytes[fallingCount + midRemaining - 1];
-                break;
-            }
-            var newBytes = corruptedBytes.Take(fallingCount + midRemaining).ToList();
-
-            map.ReInitialize(newBytes);
-            shortestPath = map.Traverse();
-
-            if (shortestPath.Count > 0) lowBytes = midRemaining + 1;
-            else highBytes = midRemaining - 1;
-        }
-        Console.WriteLine($"The first blocking byte is {firstBlockagePoint}");
+        throw new NotImplementedException();
     }
 
     private record Map
     {
-        public Map(List<Point> corruptBytes, Point end)
+        public Map(string[] input)
         {
-            Bounds = new Boundary(end);
+            Bounds = new Boundary(input.Length, input[0].Length);
             Paths = new Cell<Point>[Bounds.Width, Bounds.Height];
-            Corrupted = new bool[Bounds.Width, Bounds.Height];
-            End = end;
-            foreach (var fallingByte in corruptBytes)
-                Corrupted[fallingByte.X, fallingByte.Y] = true;
+            Walkable = new bool[Bounds.Width, Bounds.Height];
+
             for (var x = 0; x < Bounds.Width; x++)
                 for (var y = 0; y < Bounds.Width; y++)
+                {
                     Paths[x, y] = new Cell<Point>(new Point(x, y));
-
-            Paths[0, 0] = new Cell<Point>(new Point(0, 0)) { TotalScore = 0, Accumulated = 0, Heuristic = 0 };
+                    var mapChar = input[y][x];
+                    Walkable[x, y] = mapChar != '#';
+                    if (mapChar == 'S')
+                    {
+                        Start = new Point(x, y);
+                        Paths[x, y] = new Cell<Point>(Start) { TotalScore = 0, Accumulated = 0, Heuristic = 0 };
+                    }
+                    else if (mapChar == 'E') End = new Point(x, y);
+                }
         }
 
         public Boundary Bounds { get; set; }
-        public bool[,] Corrupted { get; set; }
+        public bool[,] Walkable { get; set; }
         public Cell<Point>[,] Paths { get; set; }
-        public Point Start { get; set; } = new Point(0, 0);
+        public Point Start { get; set; }
         public Point End { get; set; }
 
-        public void ReInitialize(List<Point> corruptedBytes)
-        {
-            Corrupted = new bool[Bounds.Width, Bounds.Height];
-            foreach (var fallingByte in corruptedBytes)
-                Corrupted[fallingByte.X, fallingByte.Y] = true;
-            for (var x = 0; x < Bounds.Width; x++)
-                for (var y = 0; y < Bounds.Width; y++)
-                    Paths[x, y] = new Cell<Point>(new Point(x, y));
 
-            Paths[0, 0] = new Cell<Point>(new Point(0, 0)) { TotalScore = 0, Accumulated = 0, Heuristic = 0 };
-        }
-
-        public List<Point> Traverse()
+        public List<Point> Traverse(Point? start = null)
         {
             var closedList = new bool[Bounds.Width, Bounds.Height];
-            var startingPoints = new[] { (0, Start) };
+            var startingPoints = new[] { (0, start ?? Start) };
 
             var openList = new SortedSet<(int FScore, Point step)>(startingPoints, new AStarComparer());
 
@@ -155,7 +105,7 @@ public class Day18 : IDay
                 foreach (var direction in Vector.CardinalPoints)
                 {
                     var nextPosition = parent + direction;
-                    if (Bounds.OutOfBounds(nextPosition) || Corrupted[nextPosition.X, nextPosition.Y])
+                    if (Bounds.OutOfBounds(nextPosition) || !Walkable[nextPosition.X, nextPosition.Y])
                         continue;
 
                     if (nextPosition == End)
@@ -166,7 +116,7 @@ public class Day18 : IDay
                     }
 
                     if (!closedList[nextPosition.X, nextPosition.Y]
-                        && !Corrupted[nextPosition.X, nextPosition.Y])
+                        && Walkable[nextPosition.X, nextPosition.Y])
                     {
                         var parentCell = Paths[parent.X, parent.Y];
                         var g = parentCell.Accumulated + 1;
@@ -207,6 +157,38 @@ public class Day18 : IDay
 
             return path;
         }
+
+        public List<int> Cheat(List<Point> truePath)
+        {
+            truePath.Add(Start);
+            var steps = new Stack<Point>(truePath);
+            var triedWallPositions = new HashSet<Point>();
+            var savedSeconds = new List<int>();
+            Point? previousPoint = null;
+
+            while (steps.Count > 0)
+            {
+                var stepToTry = steps.Pop();
+                var previousDirection = Vector.Delta(stepToTry, previousPoint ?? stepToTry);
+                foreach (var direction in Vector.CardinalPoints.Except([previousDirection]))
+                {
+                    var searchCell = stepToTry + direction;
+                    var searchCell2 = stepToTry + direction * 2;
+                    if (!Walkable[searchCell.X, searchCell.Y]
+                        && truePath.Contains(searchCell2)
+                        && !triedWallPositions.Contains(searchCell))
+                    {
+                        triedWallPositions.Add(searchCell);
+                        var pathIndex = truePath.IndexOf(stepToTry);
+                        var cheatIndex = truePath.IndexOf(searchCell2);
+                        savedSeconds.Add(Math.Abs(pathIndex - cheatIndex) - 2);
+                    }
+                }
+                previousPoint = stepToTry;
+            }
+            return savedSeconds;
+        }
+
         private void Print(bool[,] closedList, Point parent, Point next)
         {
             var sb = new StringBuilder();
@@ -216,7 +198,7 @@ public class Day18 : IDay
                 {
                     var compPoint = new Point(x, y);
 
-                    if (Corrupted[x, y]) sb.Append('#');
+                    if (!Walkable[x, y]) sb.Append('#');
                     else if (compPoint.Equals(Start)) sb.Append('S');
                     else if (compPoint.Equals(End)) sb.Append('E');
                     else if (compPoint.Equals(parent)) sb.Append('O');
@@ -231,4 +213,5 @@ public class Day18 : IDay
             Console.WriteLine($"Next Cell: {cell.Parent}: f:{cell.TotalScore} g:{cell.Accumulated} h:{cell.Heuristic}\n");
         }
     }
+
 }
