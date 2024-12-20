@@ -43,19 +43,21 @@ public class Day20 : IDay
     {
         var maze = new Map(_input);
         var paths = maze.Traverse();
-        var trueDistance = paths[maze.Start];
 
         var cheats = maze.Cheat(paths).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
         var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
-        // foreach (var kvp in cheats)
-        //     Console.WriteLine($"\t{kvp.Value} save {kvp.Key} seconds");
         Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
-
     }
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var maze = new Map(_input);
+        var paths = maze.Traverse();
+
+        var cheats = maze.Cheat(paths).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
+        var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
+        Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
+
     }
 
     private record Map
@@ -63,27 +65,20 @@ public class Day20 : IDay
         public Map(string[] input)
         {
             Bounds = new Boundary(input.Length, input[0].Length);
-            Paths = new Cell<Point>[Bounds.Width, Bounds.Height];
             Walkable = new bool[Bounds.Width, Bounds.Height];
 
             for (var x = 0; x < Bounds.Width; x++)
                 for (var y = 0; y < Bounds.Width; y++)
                 {
-                    Paths[x, y] = new Cell<Point>(new Point(x, y));
                     var mapChar = input[y][x];
                     Walkable[x, y] = mapChar != '#';
-                    if (mapChar == 'S')
-                    {
-                        Start = new Point(x, y);
-                        Paths[x, y] = new Cell<Point>(Start) { TotalScore = 0, Accumulated = 0, Heuristic = 0 };
-                    }
+                    if (mapChar == 'S') Start = new Point(x, y);
                     else if (mapChar == 'E') End = new Point(x, y);
                 }
         }
 
         public Boundary Bounds { get; set; }
         public bool[,] Walkable { get; set; }
-        public Cell<Point>[,] Paths { get; set; }
         public Point Start { get; set; }
         public Point End { get; set; }
 
@@ -134,30 +129,6 @@ public class Day20 : IDay
                 }
 
             return savedSeconds;
-        }
-
-        private void Print(bool[,] closedList, Point parent, Point next)
-        {
-            var sb = new StringBuilder();
-            for (var y = 0; y < Bounds.Height; y++)
-            {
-                for (var x = 0; x < Bounds.Width; x++)
-                {
-                    var compPoint = new Point(x, y);
-
-                    if (!Walkable[x, y]) sb.Append('#');
-                    else if (compPoint.Equals(Start)) sb.Append('S');
-                    else if (compPoint.Equals(End)) sb.Append('E');
-                    else if (compPoint.Equals(parent)) sb.Append('O');
-                    else if (closedList[x, y]) sb.Append('X');
-                    else if (compPoint.Equals(next)) sb.Append('?');
-                    else sb.Append(' ');
-                }
-                sb.Append('\n');
-            }
-            Console.Write(sb);
-            var cell = Paths[next.X, next.Y];
-            Console.WriteLine($"Next Cell: {cell.Parent}: f:{cell.TotalScore} g:{cell.Accumulated} h:{cell.Heuristic}\n");
         }
     }
 
