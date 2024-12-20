@@ -15,7 +15,7 @@ bwurrg
 brgr
 bbrgwb";
 
-    private Dictionary<string, int> _matchedPatterns = [];
+    private Dictionary<string, long> _matchedPatterns = [];
 
     private readonly List<string> _input = [];
 
@@ -59,7 +59,7 @@ bbrgwb";
         return (available, desired);
     }
 
-    private int Combinate(string wanted, List<string> towels)
+    private long Combinate(string wanted, List<string> towels)
     {
         if (_matchedPatterns.TryGetValue(wanted, out var patternCount)) return patternCount;
         foreach (var towel in towels)
