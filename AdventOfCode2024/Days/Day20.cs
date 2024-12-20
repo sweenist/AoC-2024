@@ -43,14 +43,16 @@ public class Day20 : IDay
     public void Part1()
     {
         var maze = new Map(_input);
-        var integralPath = maze.Traverse();
-        var cheats = maze.Cheat(integralPath).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
+        List<(Point Point, int Distance)> paths = maze.Traverse();
+        var trueDistance = paths.Single(t => t.Point.Equals(maze.Start));
+
+        Console.WriteLine($"Distance is {trueDistance}");
+
+        var cheats = maze.Cheat(paths).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
         var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
         Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
-        foreach (var kvp in cheats)
-            Console.WriteLine($"\t{kvp.Value} save {kvp.Key} seconds");
-
-
+        // foreach (var kvp in cheats)
+        //     Console.WriteLine($"\t{kvp.Value} save {kvp.Key} seconds");
     }
 
     public void Part2()
@@ -88,80 +90,34 @@ public class Day20 : IDay
         public Point End { get; set; }
 
 
-        public List<Point> Traverse(Point? start = null)
+        public List<(Point, int)> Traverse()
         {
-            var closedList = new bool[Bounds.Width, Bounds.Height];
-            var startingPoints = new[] { (0, start ?? Start) };
+            var distances = new List<(Point Point, int Distance)>();
+            var visited = new HashSet<Point>();
 
-            var openList = new SortedSet<(int FScore, Point step)>(startingPoints, new AStarComparer());
+            var openList = new Queue<(Point Point, int Distance)>();
+            openList.Enqueue((End, 0));
 
-            while (openList.Count > 0)
+            while (openList.TryDequeue(out var pointDistance))
             {
-                var point = openList.Min;
-                openList.Remove(point);
-                var (_, parent) = point;
-                closedList[parent.X, parent.Y] = true;
-
+                distances.Add(pointDistance);
+                visited.Add(pointDistance.Point);
                 foreach (var direction in Vector.CardinalPoints)
                 {
-                    var nextPosition = parent + direction;
+                    var nextPosition = pointDistance.Point + direction;
                     if (Bounds.OutOfBounds(nextPosition) || !Walkable[nextPosition.X, nextPosition.Y])
                         continue;
 
-                    if (nextPosition == End)
-                    {
-                        var cell = Paths[nextPosition.X, nextPosition.Y];
-                        cell.Parent = parent;
-                        return FollowPath();
-                    }
-
-                    if (!closedList[nextPosition.X, nextPosition.Y]
-                        && Walkable[nextPosition.X, nextPosition.Y])
-                    {
-                        var parentCell = Paths[parent.X, parent.Y];
-                        var g = parentCell.Accumulated + 1;
-                        var h = nextPosition.ManhattanDistance(End);
-                        var f = g + h;
-
-                        var nextCell = Paths[nextPosition.X, nextPosition.Y];
-
-                        if (nextCell.TotalScore == int.MaxValue || nextCell.TotalScore > f)
-                        {
-                            openList.Add((f, nextPosition));
-                            nextCell.TotalScore = f;
-                            nextCell.Accumulated = g;
-                            nextCell.Heuristic = h;
-                            nextCell.Parent = parent;
-                        }
-                        // Print(closedList, parent, nextPosition);
-                    }
+                    if (visited.Add(nextPosition) && Walkable[nextPosition.X, nextPosition.Y])
+                        openList.Enqueue((nextPosition, pointDistance.Distance + 1));
                 }
             }
-            return [];
+            return distances;
         }
 
-        private List<Point> FollowPath()
+        public List<int> Cheat(List<(Point Point, int Distance)> traversed)
         {
-            var path = new List<Point>();
-            var y = End.Y;
-            var x = End.X;
-
-            while (!(Paths[x, y].Parent.X == x && Paths[x, y].Parent.Y == y))
-            {
-                path.Add(new Point(x, y));
-                var nextParent = Paths[x, y].Parent;
-
-                x = nextParent.X;
-                y = nextParent.Y;
-            }
-
-            return path;
-        }
-
-        public List<int> Cheat(List<Point> truePath)
-        {
-            truePath.Add(Start);
-            var steps = new Stack<Point>(truePath);
+            var steps = new Stack<(Point Point, int Distance)>(traversed);
             var triedWallPositions = new HashSet<Point>();
             var savedSeconds = new List<int>();
             Point? previousPoint = null;
@@ -169,22 +125,21 @@ public class Day20 : IDay
             while (steps.Count > 0)
             {
                 var stepToTry = steps.Pop();
-                var previousDirection = Vector.Delta(stepToTry, previousPoint ?? stepToTry);
+                var previousDirection = Vector.Delta(stepToTry.Point, previousPoint ?? stepToTry.Point);
                 foreach (var direction in Vector.CardinalPoints.Except([previousDirection]))
                 {
-                    var searchCell = stepToTry + direction;
-                    var searchCell2 = stepToTry + direction * 2;
+                    var searchCell = stepToTry.Point + direction;
+                    var searchCell2 = stepToTry.Point + direction * 2;
                     if (!Walkable[searchCell.X, searchCell.Y]
-                        && truePath.Contains(searchCell2)
-                        && !triedWallPositions.Contains(searchCell))
+                        && !triedWallPositions.Contains(searchCell)
+                        && traversed.Any(x => x.Point.Equals(searchCell2)))
                     {
                         triedWallPositions.Add(searchCell);
-                        var pathIndex = truePath.IndexOf(stepToTry);
-                        var cheatIndex = truePath.IndexOf(searchCell2);
-                        savedSeconds.Add(Math.Abs(pathIndex - cheatIndex) - 2);
+                        var cheatPoint = traversed.Find(x => x.Point.Equals(searchCell2));
+                        savedSeconds.Add(Math.Abs(stepToTry.Distance - cheatPoint.Distance) - 2);
                     }
                 }
-                previousPoint = stepToTry;
+                previousPoint = stepToTry.Point;
             }
             return savedSeconds;
         }
