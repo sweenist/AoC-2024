@@ -1,6 +1,5 @@
 using System.Text;
 using AdventOfCode2024.Types;
-using AdventOfCode2024.Utility;
 using AdventOfCode2024.Utility.Math;
 
 namespace AdventOfCode2024.Days;
@@ -43,16 +42,15 @@ public class Day20 : IDay
     public void Part1()
     {
         var maze = new Map(_input);
-        List<(Point Point, int Distance)> paths = maze.Traverse();
-        var trueDistance = paths.Single(t => t.Point.Equals(maze.Start));
-
-        Console.WriteLine($"Distance is {trueDistance}");
+        var paths = maze.Traverse();
+        var trueDistance = paths[maze.Start];
 
         var cheats = maze.Cheat(paths).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
         var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
-        Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
         // foreach (var kvp in cheats)
         //     Console.WriteLine($"\t{kvp.Value} save {kvp.Key} seconds");
+        Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
+
     }
 
     public void Part2()
@@ -90,9 +88,9 @@ public class Day20 : IDay
         public Point End { get; set; }
 
 
-        public List<(Point, int)> Traverse()
+        public Dictionary<Point, int> Traverse()
         {
-            var distances = new List<(Point Point, int Distance)>();
+            var distances = new Dictionary<Point, int>();
             var visited = new HashSet<Point>();
 
             var openList = new Queue<(Point Point, int Distance)>();
@@ -100,7 +98,7 @@ public class Day20 : IDay
 
             while (openList.TryDequeue(out var pointDistance))
             {
-                distances.Add(pointDistance);
+                distances.Add(pointDistance.Point, pointDistance.Distance);
                 visited.Add(pointDistance.Point);
                 foreach (var direction in Vector.CardinalPoints)
                 {
@@ -115,32 +113,26 @@ public class Day20 : IDay
             return distances;
         }
 
-        public List<int> Cheat(List<(Point Point, int Distance)> traversed)
+        public List<int> Cheat(Dictionary<Point, int> traversed)
         {
-            var steps = new Stack<(Point Point, int Distance)>(traversed);
-            var triedWallPositions = new HashSet<Point>();
             var savedSeconds = new List<int>();
-            Point? previousPoint = null;
 
-            while (steps.Count > 0)
-            {
-                var stepToTry = steps.Pop();
-                var previousDirection = Vector.Delta(stepToTry.Point, previousPoint ?? stepToTry.Point);
-                foreach (var direction in Vector.CardinalPoints.Except([previousDirection]))
+            for (var y = 1; y < Bounds.BoundY; y++)
+                for (var x = 1; x < Bounds.BoundX; x++)
                 {
-                    var searchCell = stepToTry.Point + direction;
-                    var searchCell2 = stepToTry.Point + direction * 2;
-                    if (!Walkable[searchCell.X, searchCell.Y]
-                        && !triedWallPositions.Contains(searchCell)
-                        && traversed.Any(x => x.Point.Equals(searchCell2)))
+                    if (Walkable[x, y]) continue;
+                    var wall = new Point(x, y);
+                    foreach (var direction in new[] { Vector.North, Vector.East })
                     {
-                        triedWallPositions.Add(searchCell);
-                        var cheatPoint = traversed.Find(x => x.Point.Equals(searchCell2));
-                        savedSeconds.Add(Math.Abs(stepToTry.Distance - cheatPoint.Distance) - 2);
+                        var adjacent = wall + direction.Invert();
+                        var otherAdjacent = wall + direction;
+                        if (traversed.TryGetValue(adjacent, out var side1) && traversed.TryGetValue(otherAdjacent, out var side2))
+                        {
+                            savedSeconds.Add(Math.Abs(side1 - side2) - 2);
+                        }
                     }
                 }
-                previousPoint = stepToTry.Point;
-            }
+
             return savedSeconds;
         }
 
