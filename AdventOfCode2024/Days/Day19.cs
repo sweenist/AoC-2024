@@ -15,6 +15,8 @@ bwurrg
 brgr
 bbrgwb";
 
+    private Dictionary<string, int> _matchedPatterns = [];
+
     private readonly List<string> _input = [];
 
     public Day19(bool useExample = false)
@@ -35,87 +37,38 @@ bbrgwb";
     public void Part1()
     {
         var (available, desired) = ParseTowels();
-        var result = Combinate(available, desired);
-        // Console.WriteLine($"combos: {string.Join('\n', result.Keys)}");
 
-        Console.WriteLine($"Only {result.Count} available combinations of towels available");
+        var result = desired.Count(t => Combinate(t, available) != 0);
+
+        Console.WriteLine($"Only {result} available combinations of towels available");
     }
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var (available, desired) = ParseTowels();
+
+        var result = desired.Sum(t => Combinate(t, available));
+
+        Console.WriteLine($"{result} total available combinations of towels available");
     }
 
     private (List<string> available, List<string> desired) ParseTowels()
     {
-        var available = _input[0].Split(", ").OrderBy(x => x.Length).ToList();
-        var desired = _input[2..5].ToList();
+        var available = _input[0].Split(", ").ToList();
+        var desired = _input[2..].ToList();
         return (available, desired);
     }
 
-    private static Dictionary<string, List<List<string>>> Combinate(List<string> available, List<string> desired)
+    private int Combinate(string wanted, List<string> towels)
     {
-        var results = new Dictionary<string, List<List<string>>>();
-        var memo = new Dictionary<string, List<string>>();
-
-        foreach (var want in desired)
+        if (_matchedPatterns.TryGetValue(wanted, out var patternCount)) return patternCount;
+        foreach (var towel in towels)
         {
-            var chunks = available.Where(want.Contains).OrderByDescending(t => t.Length).ToList();
-            var combinations = GetCombinations(want, chunks, memo);
-            foreach (var combo in combinations)
-            {
-                if (want.Equals(string.Join("", combo)))
-                {
-                    if (results.ContainsKey(want))
-                        results[want].Add(combo);
-                    else
-                        results[want] = [combo];
-
-                    // Console.WriteLine($"combo: {string.Join(',', combo)}");
-                }
-            }
+            if (wanted == string.Empty) return 1;
+            if (wanted.StartsWith(towel))
+                patternCount += Combinate(wanted[towel.Length..], towels);
         }
-        return results;
-    }
-
-    private static List<List<string>> GetCombinations(string word, List<string> towels, Dictionary<string, List<string>> memo)
-    {
-        var matches = CascadeTowels(word, towels, memo).ToList();
-        var returnList = matches.Split(x => x.Equals(","));
-
-        return returnList.ToList();
-    }
-
-    private static IEnumerable<string> CascadeTowels(string wordSegment, List<string> towels, Dictionary<string, List<string>> memo)
-    {
-        if (wordSegment == string.Empty)
-        {
-            yield return ",";
-            yield break;
-        }
-
-        var towelSubset = towels.Where(wordSegment.Contains).OrderByDescending(t => t.Length).ToList();
-        if (towelSubset.Count == 0)
-            yield break;
-
-        if (memo.TryGetValue(wordSegment, out var result))
-            foreach (var t in result)
-                yield return t;
-
-        foreach (var towel in towelSubset)
-        {
-
-            if (wordSegment.StartsWith(towel))
-            {
-                memo[wordSegment] = [towel];
-                yield return towel;
-
-                var cascades = CascadeTowels(wordSegment[towel.Length..], towelSubset, memo).ToList();
-                memo[wordSegment].AddRange(cascades);
-
-                foreach (var segment in cascades)
-                    yield return segment;
-            }
-        }
+        _matchedPatterns[wanted] = patternCount;
+        return patternCount;
     }
 }
