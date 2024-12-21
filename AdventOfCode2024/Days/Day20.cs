@@ -144,7 +144,7 @@ public class Day20 : IDay
                 if (path[index].ManhattanDistance(End) <= 20)
                 {
                     var searchVector = Vector.Unify(End, node);
-                    var cardinals = Vector.CardinalPoints.Where(v => v.X == searchVector.X || v.Y == searchVector.Y)
+                    var cardinals = Vector.CardinalPoints.Where(v => v.X == searchVector.X || v.Y == searchVector.Y);
                     // while (passWall)
                 }
                 index--;

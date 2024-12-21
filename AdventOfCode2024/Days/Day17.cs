@@ -9,7 +9,7 @@ public class Day17 : IDay
     // Register C: 0
 
     // Program: 0,1,5,4,3,0";
-    private string _example2 = @"egister A: 2024
+    private string _example2 = @"Register A: 117440
 Register B: 0
 Register C: 0
 
@@ -38,7 +38,7 @@ Program: 0,3,5,4,3,0";
         SetRegisters();
         var instructionSet = _input[^1].Split(' ')[1].Split(',').Select(int.Parse).ToList();
         var pointer = 0;
-        var outBuffer = new List<int>();
+        var outBuffer = new List<ulong>();
 
         while (pointer < instructionSet.Count)
         {
@@ -47,13 +47,15 @@ Program: 0,3,5,4,3,0";
                 case 0:
                     adv(instructionSet[++pointer]);
                     pointer++;
+                    PrintRegisters("adv");
                     break;
                 case 1:
-                    bxl(instructionSet[++pointer]);
+                    bxl((uint)instructionSet[++pointer]);
                     pointer++;
+                    PrintRegisters("bxl");
                     break;
                 case 2:
-                    bst(instructionSet[++pointer]);
+                    bst((uint)instructionSet[++pointer]);
                     pointer++;
                     break;
                 case 3:
@@ -62,10 +64,14 @@ Program: 0,3,5,4,3,0";
                 case 4:
                     pointer += 2;
                     bxc();
+                    PrintRegisters("bxc");
                     break;
                 case 5:
-                    outBuffer.Add(Out(instructionSet[++pointer]));
+                    outBuffer.Add(Out((uint)instructionSet[++pointer]));
                     pointer++;
+                    PrintRegisters("out");
+
+                    Console.WriteLine(Convert.ToString((long)Registers['A'], 8));
                     break;
                 case 6:
                     bdv(instructionSet[++pointer]);
@@ -74,6 +80,7 @@ Program: 0,3,5,4,3,0";
                 case 7:
                     cdv(instructionSet[++pointer]);
                     pointer++;
+                    PrintRegisters("cdv");
                     break;
                 default:
                     throw new InvalidOperationException($"no operation associated with {pointer}");
@@ -88,68 +95,63 @@ Program: 0,3,5,4,3,0";
         var commandString = _input[^1].Split(' ')[1];
         SetRegisters();
         var instructionSet = _input[^1].Split(' ')[1].Split(',').Select(int.Parse).ToList();
-        for (var a = 512; a < 4096; a++)
+        // 2,4,1,5,7,5,1,6,0,3,4,0,5,5,3,0
+        // B = A%8;
+        // B XOR 5
+        // A/B => C
+        // B XOR 6 => B
+        // A / 8 => A
+        // B XOR C => B
+        Registers['A'] = 0L;
+        Registers['B'] = 0L;
+        Registers['C'] = 0L;
+        for (var i = instructionSet.Count - 1; i >= 0; i--)
         {
-            var pointer = 0;
-            Registers['A'] = a;
-            var outBuffer = new List<int>();
+            Registers['A'] += (uint)(instructionSet[i]);
+            bxc();
+            Registers['A'] *= 8;
+            Console.WriteLine($"Converting {Registers['A']}");
 
-            while (pointer < instructionSet.Count)
-            {
-                switch (instructionSet[pointer])
-                {
-                    case 0:
-                        adv(instructionSet[++pointer]);
-                        pointer++;
-                        break;
-                    case 1:
-                        bxl(instructionSet[++pointer]);
-                        pointer++;
-                        break;
-                    case 2:
-                        bst(instructionSet[++pointer]);
-                        pointer++;
-                        break;
-                    case 3:
-                        pointer = jnz(instructionSet[++pointer], pointer);
-                        break;
-                    case 4:
-                        pointer += 2;
-                        bxc();
-                        break;
-                    case 5:
-                        outBuffer.Add(Out(instructionSet[++pointer]));
-                        pointer++;
-                        break;
-                    case 6:
-                        bdv(instructionSet[++pointer]);
-                        pointer++;
-                        break;
-                    case 7:
-                        cdv(instructionSet[++pointer]);
-                        pointer++;
-                        break;
-                    default:
-                        throw new InvalidOperationException($"no operation associated with {pointer}");
-                }
+            Console.WriteLine(Convert.ToString((long)Registers['A'], 8));
 
-            }
-            if (outBuffer.SequenceEqual([5, 5, 3, 0]))
-                Console.WriteLine($"A: {a} -> {string.Join(',', outBuffer)}");
+            bxl(6);
+            Registers['C'] = Registers['B'] * Registers['A'];
+            bxl(5);
+
+
+            Registers['B'] += Registers['A'] % 8;
+            // PrintRegisters("", true);
         }
 
-        Console.WriteLine(commandString);
+        Console.WriteLine($"Original Value? {Registers['A']}");
+        Registers['B'] = 0L;
+        Registers['C'] = 0L;
+        var outBuffer = new List<ulong>();
+
+        while (Registers['A'] != 0)
+        {
+            // 2,4,1,5,7,5,1,6,0,3,4,0,5,5,3,0
+            bst(4u);
+            bxl(5);
+            cdv(5);
+            bxl(6);
+            adv(3);
+            bxc();
+            outBuffer.Add(Out(5u));
+        }
+
+        Console.WriteLine($"Output:\n{string.Join(',', outBuffer)}");
     }
 
-    private Dictionary<char, int> Registers { get; set; } = [];
+    private Dictionary<char, ulong> Registers { get; set; } = [];
 
     private void SetRegisters()
     {
         var pattern = @"\d+$";
-        var dict = new Dictionary<char, int>();
-        dict['A'] = int.Parse(Regex.Match(_input[0], pattern).Value);
-        dict['B'] = int.Parse(Regex.Match(_input[1], pattern).Value);
-        dict['C'] = int.Parse(Regex.Match(_input[2], pattern).Value);
+        var dict = new Dictionary<char, ulong>();
+        dict['A'] = ulong.Parse(Regex.Match(_input[0], pattern).Value);
+        dict['B'] = ulong.Parse(Regex.Match(_input[1], pattern).Value);
+        dict['C'] = ulong.Parse(Regex.Match(_input[2], pattern).Value);
 
         Registers = dict;
     }
@@ -158,17 +160,17 @@ Program: 0,3,5,4,3,0";
     {
         var numerator = Registers['A'];
         if (operand <= 3 || operand == 7)
-            Registers[registerIndex] = numerator / (int)Math.Pow(2, operand);
+            Registers[registerIndex] = numerator / (ulong)Math.Pow(2, operand);
         else if (operand == 4)
             Registers[registerIndex] = 1;
         else if (operand == 5)
         {
-            var divisor = (int)Math.Pow(2, Registers['B']);
+            var divisor = (ulong)Math.Pow(2, Registers['B']);
             Registers[registerIndex] = numerator / divisor;
         }
         else if (operand == 6)
         {
-            var divisor = (int)Math.Pow(2, Registers['C']);
+            var divisor = (ulong)Math.Pow(2, Registers['C']);
             Registers[registerIndex] = numerator / divisor;
         }
         else
@@ -177,12 +179,12 @@ Program: 0,3,5,4,3,0";
         }
     }
 
-    private void bxl(int operand)
+    private void bxl(uint operand)
     {
         Registers['B'] ^= operand;
     }
 
-    private void bst(int operand)
+    private void bst(uint operand)
     {
         if (operand <= 3 || operand == 7)
             Registers['B'] = operand;
@@ -206,7 +208,7 @@ Program: 0,3,5,4,3,0";
         Registers['B'] ^= Registers['C'];
     }
 
-    private int Out(int operand)
+    private ulong Out(uint operand)
     {
         if (operand <= 3 || operand == 7)
             return operand;
@@ -227,5 +229,14 @@ Program: 0,3,5,4,3,0";
     private void cdv(int operand)
     {
         adv(operand, 'C');
+    }
+
+    private void PrintRegisters(string caller, bool print = false)
+    {
+        if (!print) return;
+        Console.WriteLine($"Caller: {caller}");
+        Console.WriteLine($"\tA: {Registers['A']}");
+        Console.WriteLine($"\tB: {Registers['B']}");
+        Console.WriteLine($"\tC: {Registers['C']}\n");
     }
 }
