@@ -78,13 +78,28 @@ public static class VectorExtensions
 
     public static Vector Clockwise(this Vector v) => new(-v.Y, v.X);
     public static Vector AntiClockwise(this Vector v) => new(v.Y, -v.X);
+    public static Vector Unify(this ICoordinate coordinate)
+    {
+        var x = coordinate.X == 0 ? 0 : coordinate.X / System.Math.Abs(coordinate.X);
+        var y = coordinate.Y == 0 ? 0 : coordinate.Y / System.Math.Abs(coordinate.Y);
+        return new(x, y);
+    }
+    public static List<Vector> Cardinalize(this ICoordinate coordinate)
+    {
+        var unitVector = coordinate.Unify();
+        return Vector.CardinalPoints.Where(v
+                => (v.X != 0 && v.X.Equals(unitVector.X))
+                || (v.Y != 0 && v.Y.Equals(unitVector.Y)))
+            .ToList();
+    }
 
-    public static Dictionary<Vector, char> MapTokens => new()
+    public static Dictionary<ICoordinate, char> MapTokens => new()
     {
         { Vector.North, '^'},
         { Vector.East, '>'},
         { Vector.South, 'v'},
         { Vector.West, '<'},
+        { Vector.Zero, '0'},
     };
 }
 
