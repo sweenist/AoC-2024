@@ -54,9 +54,9 @@ public class Day20 : IDay
         var maze = new Map(_input);
         var paths = maze.Traverse();
 
-        var cheats = maze.Cheat(paths).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
-        var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
-        Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
+        var cheats = maze.CheatPlus(paths);//.GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
+        // var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
+        // Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
 
     }
 
@@ -130,6 +130,27 @@ public class Day20 : IDay
 
             return savedSeconds;
         }
-    }
 
+        public List<int> CheatPlus(Dictionary<Point, int> traversed)
+        {
+            var savedSeconds = new List<int>();
+            var path = traversed.Select(d => d.Key).ToList();
+            var index = path.Count - 1;
+
+            while (index != 0)
+            {
+                var node = path[index];
+
+                if (path[index].ManhattanDistance(End) <= 20)
+                {
+                    var searchVector = Vector.Unify(End, node);
+                    var cardinals = Vector.CardinalPoints.Where(v => v.X == searchVector.X || v.Y == searchVector.Y)
+                    // while (passWall)
+                }
+                index--;
+            }
+
+            return savedSeconds;
+        }
+    }
 }

@@ -41,6 +41,13 @@ public struct Vector(int X, int Y, int? Z = null) : ICoordinate, IComparable<Vec
     public static bool operator !=(Vector a, Vector b) => a.X != b.X || a.Y != b.Y;
 
     public static Vector Delta(ICoordinate a, ICoordinate b) => new(a.X - b.X, a.Y - b.Y);
+    public static Vector Unify(ICoordinate target, ICoordinate source)
+    {
+        var rawVector = Delta(source, target);
+        var x = rawVector.X == 0 ? 0 : rawVector.X / System.Math.Abs(rawVector.X);
+        var y = rawVector.Y == 0 ? 0 : rawVector.Y / System.Math.Abs(rawVector.Y);
+        return new(x, y);
+    }
 
     public override bool Equals([NotNullWhen(true)] object? obj)
     {
