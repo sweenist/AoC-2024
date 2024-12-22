@@ -40,7 +40,7 @@ public struct Vector(int X, int Y, int? Z = null) : ICoordinate, IComparable<Vec
     public static bool operator ==(Vector a, Vector b) => a.X == b.X && a.Y == b.Y;
     public static bool operator !=(Vector a, Vector b) => a.X != b.X || a.Y != b.Y;
 
-    public static Vector Delta(ICoordinate a, ICoordinate b) => new(a.X - b.X, a.Y - b.Y);
+    public static Vector Delta(ICoordinate source, ICoordinate target) => new(source.X - target.X, source.Y - target.Y);
     public static Vector Unify(ICoordinate target, ICoordinate source)
     {
         var rawVector = Delta(source, target);
@@ -107,7 +107,7 @@ public static class VectorExtensions
         { Vector.East, '>'},
         { Vector.South, 'v'},
         { Vector.West, '<'},
-        { Vector.Zero, '0'},
+        { Vector.Zero, 'A'},
     };
 }
 
