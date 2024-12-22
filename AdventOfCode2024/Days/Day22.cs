@@ -32,7 +32,6 @@ public class Day22 : IDay
 
     public void Part2()
     {
-        // var results = new[] { 123L }
         var results = _input.Select(long.Parse)
                             .Select(x => new KeyValuePair<long, List<short>>(x, Sequencify(x, 1999)))
                             .ToDictionary();
@@ -44,8 +43,6 @@ public class Day22 : IDay
             foreach (var key in bananaDeltas.Keys)
                 bananaMarket[key] = bananaMarket.GetValueOrDefault(key) + bananaDeltas[key];
         }
-        // Console.WriteLine(string.Join('\n', bananaMarket.Select(kvp => $"{kvp.Key}:{kvp.Value}")));
-        // var key2 = bananaMarket.Where(k => k.Value == 24).First().Key;
         Console.WriteLine($"The most bananas one can get are {bananaMarket.Values.Max()} ");
     }
 
@@ -75,8 +72,6 @@ public class Day22 : IDay
         }
         return secret;
     }
-
-
 
     private static List<short> Sequencify(long secret, int iterations)
     {
