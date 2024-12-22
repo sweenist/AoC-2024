@@ -93,6 +93,14 @@ public static class VectorExtensions
             .ToList();
     }
 
+    public static List<Vector> PreferFirstCardinal(this List<Vector> v, Vector direction)
+    {
+        if (!v.Contains(direction)) return v;
+        v.Remove(direction);
+        v.Insert(0, direction);
+        return v;
+    }
+
     public static Dictionary<ICoordinate, char> MapTokens => new()
     {
         { Vector.North, '^'},

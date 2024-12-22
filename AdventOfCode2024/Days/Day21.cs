@@ -66,10 +66,10 @@ public class Day21 : IDay
                 robot1.Moves += robot1.Visited[^1].ManhattanDistance(_numPad[seq]) + ACTIVATE;
                 robot1.Visited.Add(_numPad[seq]);
             }
-            var (_, robot2Visits) = MoveDirectionalRobot(robot2, robot1.Visited);
+            var (_, robot2Visits) = MoveDirectionalRobot(robot2, robot1.Visited, true);
             var (robot3Moves, _) = MoveDirectionalRobot(robot3, robot2Visits, true);
             totalComplexity += int.Parse(sequence.Trim('A')) * robot3Moves;
-            Console.WriteLine(robot3Moves);
+            Console.WriteLine($"{robot3Moves}, {int.Parse(sequence.Trim('A'))}");
         }
 
         Console.WriteLine($"Total complexity keypad movements is {totalComplexity}");
@@ -77,24 +77,8 @@ public class Day21 : IDay
 
     public void Part2()
     {
-        var robot1 = (Moves: 0, Visited: new List<Point>() { _numPad['A'] });
-
-        var sequence = _input[0];
-        var activate = 1;
-
-        foreach (var seq in sequence)
-        {
-            robot1.Moves += robot1.Visited[^1].ManhattanDistance(_numPad[seq]) + activate;
-            robot1.Visited.Add(_numPad[seq]);
-        }
-        var pairs = Pair(robot1.Visited);
-        foreach (var (t, s) in pairs)
-        {
-            Console.WriteLine($"Point Pair {t}, {s}");
-        }
+        throw new NotImplementedException();
     }
-
-
 
     private (int Moves, List<Point> Visited) MoveDirectionalRobot((int Moves, List<Point> Visited) robot, List<Point> visited, bool print = false)
     {
@@ -102,28 +86,27 @@ public class Day21 : IDay
         foreach (var (target, source) in Pair(visited))
         {
             var deltaVector = Vector.Delta(target, source);
-            var directions = deltaVector.Cardinalize();
+            var directions = deltaVector.Cardinalize().PreferFirstCardinal(Vector.South);
             var currentDir = Vector.Zero;
 
             while (directions.Count > 0)
             {
                 var dir = directions[0];
-                var padMoves = _dirPad[currentDir].ManhattanDistance(_dirPad[dir]);
-                robot.Moves += padMoves;
-                printString += string.Join("", Enumerable.Repeat(MapTokens[dir], padMoves));
-
+                robot.Moves += _dirPad[currentDir].ManhattanDistance(_dirPad[dir]);
                 currentDir = dir;
 
                 var horizontal = dir.X != 0;
                 var moves = horizontal ? Math.Abs(deltaVector.X) : Math.Abs(deltaVector.Y);
                 robot.Moves += moves;
                 deltaVector += dir.Invert() * moves;
-                robot.Visited.Add(_dirPad[currentDir]);
+                robot.Visited.AddRange(Enumerable.Repeat(_dirPad[currentDir], moves));
+                printString += MapTokens[currentDir];
 
                 directions.RemoveAt(0);
             }
-            if (deltaVector != Vector.Zero) throw new Exception("missing moves");
             var acceptMoves = _dirPad[currentDir].ManhattanDistance(_dirPad[Vector.Zero]) + ACTIVATE;
+            deltaVector = Vector.Delta(_dirPad[currentDir], _dirPad[Vector.Zero]);
+            Console.WriteLine($"deltaVector to A button: {deltaVector}");
             robot.Moves += acceptMoves;
             printString += string.Join("", Enumerable.Repeat(MapTokens[currentDir], acceptMoves));
 
@@ -131,7 +114,7 @@ public class Day21 : IDay
             printString += 'A';
         }
 
-        if (print) Console.WriteLine(printString);
+        if (print) Console.WriteLine($"{robot.Moves}: {printString}");
         return (robot.Moves, robot.Visited);
     }
 
