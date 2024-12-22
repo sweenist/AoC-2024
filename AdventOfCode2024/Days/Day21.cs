@@ -66,7 +66,7 @@ public class Day21 : IDay
                 robot1.Moves += robot1.Visited[^1].ManhattanDistance(_numPad[seq]) + ACTIVATE;
                 robot1.Visited.Add(_numPad[seq]);
             }
-            var (_, robot2Visits) = MoveDirectionalRobot(robot2, robot1.Visited);
+            var (_, robot2Visits) = MoveDirectionalRobot(robot2, robot1.Visited, true);
             var (robot3Moves, _) = MoveDirectionalRobot(robot3, robot2Visits, true);
             totalComplexity += int.Parse(sequence.Trim('A')) * robot3Moves;
             Console.WriteLine($"{robot3Moves}, {int.Parse(sequence.Trim('A'))}");
