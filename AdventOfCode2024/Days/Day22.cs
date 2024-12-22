@@ -3,8 +3,8 @@ namespace AdventOfCode2024.Days;
 public class Day22 : IDay
 {
     private string _example = @"1
-10
-100
+2
+3
 2024";
 
     private readonly List<string> _input = [];
@@ -32,8 +32,9 @@ public class Day22 : IDay
 
     public void Part2()
     {
+        // var results = new[] { 123L }
         var results = _input.Select(long.Parse)
-                            .Select(x => new KeyValuePair<long, List<short>>(x, Sequencify(x, 2000)))
+                            .Select(x => new KeyValuePair<long, List<short>>(x, Sequencify(x, 1999)))
                             .ToDictionary();
 
         var bananaMarket = new Dictionary<string, int>();
@@ -41,14 +42,11 @@ public class Day22 : IDay
         {
             var bananaDeltas = Bananafy(results, initial);
             foreach (var key in bananaDeltas.Keys)
-            {
-                if (key == "-2,1,-1,3") Console.WriteLine($"{key} has {bananaDeltas[key]}");
                 bananaMarket[key] = bananaMarket.GetValueOrDefault(key) + bananaDeltas[key];
-            }
         }
         // Console.WriteLine(string.Join('\n', bananaMarket.Select(kvp => $"{kvp.Key}:{kvp.Value}")));
-        var key2 = bananaMarket.Where(k => k.Value == 24).First().Key;
-        Console.WriteLine($"The most bananas one can get are {bananaMarket.Values.Max()} in {key2}");
+        // var key2 = bananaMarket.Where(k => k.Value == 24).First().Key;
+        Console.WriteLine($"The most bananas one can get are {bananaMarket.Values.Max()} ");
     }
 
     private static Dictionary<string, int> Bananafy(Dictionary<long, List<short>> results, long initial)
