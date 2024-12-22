@@ -66,10 +66,10 @@ public class Day21 : IDay
                 robot1.Moves += robot1.Visited[^1].ManhattanDistance(_numPad[seq]) + ACTIVATE;
                 robot1.Visited.Add(_numPad[seq]);
             }
-            var (_, robot2Visits) = MoveDirectionalRobot(robot2, robot1.Visited, true);
-            // var (robot3Moves, _) = MoveDirectionalRobot(robot3, robot2Visits, true);
-            // totalComplexity += int.Parse(sequence.Trim('A')) * robot3Moves;
-            // Console.WriteLine($"{robot3Moves}, {int.Parse(sequence.Trim('A'))}");
+            var (_, robot2Visits) = MoveDirectionalRobot(robot2, robot1.Visited);
+            var (robot3Moves, _) = MoveDirectionalRobot(robot3, robot2Visits, true);
+            totalComplexity += int.Parse(sequence.Trim('A')) * robot3Moves;
+            Console.WriteLine($"{robot3Moves}, {int.Parse(sequence.Trim('A'))}");
         }
 
         Console.WriteLine($"Total complexity keypad movements is {totalComplexity}");
@@ -118,7 +118,7 @@ public class Day21 : IDay
         }
 
         if (print) Console.WriteLine($"{robot.Moves}: {printString}");
-        Console.WriteLine(PrintPoints(robot.Visited));
+        // Console.WriteLine(PrintPoints(robot.Visited));
         return (robot.Moves, robot.Visited);
     }
 
