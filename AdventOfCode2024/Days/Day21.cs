@@ -13,25 +13,35 @@ public class Day21 : IDay
 
     private readonly Dictionary<char, Point> _numPad = new()
     {
-            {'7', new Point(0,0)},
-            {'8', new Point(1,0)},
-            {'9', new Point(2,0)},
-            {'4', new Point(0,1)},
-            {'5', new Point(1,1)},
-            {'6', new Point(2,1)},
-            {'1', new Point(0,2)},
-            {'2', new Point(1,2)},
-            {'3', new Point(2,2)},
-            {'0', new Point(1,3)},
-            {'A', new Point(2,3)},
-        };
+        {'7', new Point(0,0)},
+        {'8', new Point(1,0)},
+        {'9', new Point(2,0)},
+        {'4', new Point(0,1)},
+        {'5', new Point(1,1)},
+        {'6', new Point(2,1)},
+        {'1', new Point(0,2)},
+        {'2', new Point(1,2)},
+        {'3', new Point(2,2)},
+        {'0', new Point(1,3)},
+        {'A', new Point(2,3)},
+    };
+    /*
+         0   1   2
+           +---+---+
+    0      | ^ | A |
+       +---+---+---+
+    1  | < + v | > |
+       +---+---+---+
+    */
     private readonly Dictionary<Vector, Point> _dirPad = new(){
-            {Vector.North, new Point(1,0)},
-            {Vector.Zero, new Point(2,0)},
-            {Vector.West, new Point(0,1)},
-            {Vector.South, new Point(1,1)},
-            {Vector.East, new Point(2,1)},
-        };
+        {Vector.North, new Point(1,0)},
+        {Vector.Zero, new Point(2,0)},  //Activate Button
+        {Vector.West, new Point(0,1)},
+        {Vector.South, new Point(1,1)},
+        {Vector.East, new Point(2,1)},
+    };
+
+    private readonly Dictionary<(Point Target, Point Source), List<Vector>> memoizedDirPad = [];
 
     private readonly List<string> _input = [];
 
@@ -66,10 +76,15 @@ public class Day21 : IDay
                 robot1.Moves += robot1.Visited[^1].ManhattanDistance(_numPad[seq]) + ACTIVATE;
                 robot1.Visited.Add(_numPad[seq]);
             }
-            var (_, robot2Visits) = MoveDirectionalRobot(robot2, robot1.Visited, true);
-            var (robot3Moves, _) = MoveDirectionalRobot(robot3, robot2Visits, true);
-            totalComplexity += int.Parse(sequence.Trim('A')) * robot3Moves;
-            Console.WriteLine($"{robot3Moves}, {int.Parse(sequence.Trim('A'))}");
+            var aggregate = new List<Point>();
+            // foreach (var pair in Pair(robot1.Visited))
+            aggregate.AddRange(MoveRobot((_numPad['0'], _numPad['A']), 1, 2));
+            Console.WriteLine(string.Join("\n=>", aggregate));
+
+            // var (_, robot2Visits) = MoveDirectionalRobot(robot2, robot1.Visited, true);
+            // var (robot3Moves, _) = MoveDirectionalRobot(robot3, robot2Visits, true);
+            // totalComplexity += int.Parse(sequence.Trim('A')) * robot3Moves;
+            // Console.WriteLine($"{robot3Moves}, {int.Parse(sequence.Trim('A'))}");
         }
 
         Console.WriteLine($"Total complexity keypad movements is {totalComplexity}");
@@ -120,6 +135,52 @@ public class Day21 : IDay
         if (print) Console.WriteLine($"{robot.Moves}: {printString}");
         // Console.WriteLine(PrintPoints(robot.Visited));
         return (robot.Moves, robot.Visited);
+    }
+
+    private IEnumerable<Point> MoveRobot((Point Target, Point Source) visited, int currentDepth, int maxDepth)
+    {
+        if (currentDepth > maxDepth)
+            yield break;
+        var deltaVector = Vector.Delta(visited.Target, visited.Source);
+        var returnVector = deltaVector.Invert();
+        var directions = deltaVector.Cardinalize().PreferFirstCardinal(Vector.South).PreferFirstCardinal(Vector.East);
+        var nextSource = Vector.Zero;
+        Vector nextTarget;
+        var currentKey = Vector.Zero;
+        Console.WriteLine($"delta: {deltaVector}");
+
+        while (directions.Count > 0)
+        {
+            var dir = directions[0];
+            currentKey = dir;
+
+            Console.WriteLine($"dir: {dir}");
+            var horizontal = dir.X != 0;
+            var moves = horizontal ? Math.Abs(deltaVector.X) : Math.Abs(deltaVector.Y);
+            deltaVector += dir.Invert() * moves;
+
+            if (currentDepth == maxDepth)
+                foreach (var keyPress in Enumerable.Repeat(_dirPad[dir], moves))
+                {
+                    yield return keyPress;
+                    yield break;
+                }
+
+
+            directions.RemoveAt(0);
+            if (directions.Count == 0)
+            {
+                nextTarget = dir;
+                foreach (var keyPress in MoveRobot((_dirPad[nextTarget], _dirPad[nextSource]), currentDepth + 1, maxDepth))
+                    yield return keyPress;
+            }
+
+        }
+
+        if (currentDepth == maxDepth)
+            yield break;
+        // robot.Visited.Add(_dirPad[activationKey]);
+
     }
 
     private static List<(Point Target, Point Source)> Pair(List<Point> points)
