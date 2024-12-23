@@ -19,12 +19,12 @@ Day 13 &nbsp;🟢
 Day 14 &nbsp;🟢  
 Day 15 &nbsp;🟢  
 Day 16 &nbsp;🟠  
-Day 17 &nbsp;🟠  
+Day 17 &nbsp;🟢  
 Day 18 &nbsp;🟢  
 Day 19 &nbsp;🟢  
 Day 20 &nbsp;🟠  
-Day 21 &nbsp;⚫  
-Day 22 &nbsp;⚫  
+Day 21 &nbsp;🔴  
+Day 22 &nbsp;🟢  
 Day 23 &nbsp;⚫  
 Day 24 &nbsp;⚫  
 Day 25 &nbsp;⚫  
