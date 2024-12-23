@@ -4,11 +4,6 @@ namespace AdventOfCode2024.Days;
 
 public class Day17 : IDay
 {
-    //     private string _example = @"Register A: 729
-    // Register B: 0
-    // Register C: 0
-
-    // Program: 0,1,5,4,3,0";
     private string _example2 = @"Register A: 117440
 Register B: 0
 Register C: 0
@@ -57,12 +52,12 @@ Program: 0,3,5,4,3,0";
                         PrintRegisters("adv");
                         break;
                     case 1:
-                        bxl((uint)instructionSet[++pointer]);
+                        bxl((int)instructionSet[++pointer]);
                         pointer++;
                         PrintRegisters("bxl");
                         break;
                     case 2:
-                        bst((uint)instructionSet[++pointer]);
+                        bst((int)instructionSet[++pointer]);
                         pointer++;
                         break;
                     case 3:
@@ -77,8 +72,6 @@ Program: 0,3,5,4,3,0";
                         outBuffer.Add(Out((int)instructionSet[++pointer]));
                         pointer++;
                         PrintRegisters("out");
-
-                        // Console.WriteLine(Convert.ToString((long)Registers['A'], 8));
                         break;
                     case 6:
                         bdv(instructionSet[++pointer]);
@@ -103,14 +96,14 @@ Program: 0,3,5,4,3,0";
     {
         var commandString = _input[^1].Split(' ')[1];
         SetRegisters();
-        var instructionSet = commandString.Split(',').Select(int.Parse).ToList();
+        var instructionSet = commandString.Split(',').Select(long.Parse).ToList();
 
-        Registers['A'] = Solve(0L, [5, 5, 3, 0], 0).First();
+        Registers['A'] = Solve(0L, instructionSet, 0) ?? 0L;
+
         var outBuffer = new List<long>();
         Console.WriteLine($"{Registers['A']} is the uncorrupted qine value");
         while (Registers['A'] != 0)
         {
-            // 2,4,1,5,7,5,1,6,0,3,4,0,5,5,3,0
             bst(4);
             bxl(5);
             cdv(5);
@@ -138,43 +131,40 @@ Program: 0,3,5,4,3,0";
         Registers = dict;
     }
 
-    private static IEnumerable<long> Solve(long answer, List<int> instructionSet, int endPointer)
+    private long? Solve(long answer, List<long> instructionSet, int endPointer)
     {
-        if (instructionSet.Count == 0)
-        {
-            yield return answer;
-            yield break;
-        }
-        // 2,4,1,5,7,5,1,6,0,3,4,0,5,5,3,0
-        // B = A%8;
-        // B XOR 5
-        // A/B => C
-        // B XOR 6 => B
-        // A / 8 => A
-        // B XOR C => B
         foreach (var aTest in Enumerable.Range(0, 8))
         {
             long b = aTest;
-            var a = (answer << 3) | b;
-            Console.WriteLine($"step {aTest}: {a}");
-            b = a % 8;
+            var a = answer * 8 + aTest;
+            var result = RunProgram(a);
+            if (result.TakeLast(endPointer + 1).SequenceEqual(instructionSet.TakeLast(endPointer + 1)))
+            {
+                if (endPointer == instructionSet.Count - 1)
+                    return a;
+                var nextResult = Solve(a, instructionSet, endPointer + 1);
+                if (nextResult.HasValue) return nextResult;
+            }
 
-            Console.WriteLine($"step {aTest}: b:{b}");
-            b ^= 5;
-
-            Console.WriteLine($"step {aTest}: b:{b}");
-            var c = a / (long)Math.Pow(2, b);
-
-            Console.WriteLine($"step {aTest}: c:{c}");
-            b = (b ^ 6L ^ c) % 8;
-            a /= 8;
-
-            Console.WriteLine($"step {aTest}: final b:{b}");
-            if (b != instructionSet[^1])
-                continue;
-            foreach (var nextValue in Solve(a, instructionSet[..^1]))
-                yield return nextValue;
         }
+        return null;
+    }
+
+    private IEnumerable<long> RunProgram(long a)
+    {
+        var b = 0L;
+        var c = 0L;
+        while (a != 0)
+        {
+            b = bst2(4, a);
+            b ^= 5;
+            c = adv2(5, a, b);
+            b ^= 6;
+            a = adv2(3, a);
+            b ^= c;
+            yield return b % 8;
+        }
+
     }
 
     private void adv(int operand, char registerIndex = 'A')
@@ -199,13 +189,29 @@ Program: 0,3,5,4,3,0";
             throw new InvalidOperationException($"operand {operand} is not a valid operation");
         }
     }
+    private static long adv2(int operand, long numerator, long? otherRegister = null)
+    {
+        if (operand <= 3 || operand == 7)
+            return numerator / (long)Math.Pow(2, operand);
+        else if (operand == 4)
+            return 1;
+        else if (operand == 5 || operand == 6)
+        {
+            var divisor = (long)Math.Pow(2, (double)otherRegister!);
+            return numerator / divisor;
+        }
+        else
+        {
+            throw new InvalidOperationException($"operand {operand} is not a valid operation");
+        }
+    }
 
-    private void bxl(uint operand)
+    private void bxl(int operand)
     {
         Registers['B'] ^= operand;
     }
 
-    private void bst(uint operand)
+    private void bst(int operand)
     {
         if (operand <= 3 || operand == 7)
             Registers['B'] = operand;
@@ -217,6 +223,20 @@ Program: 0,3,5,4,3,0";
             Registers['B'] = Registers['C'] % 8;
         else throw new InvalidOperationException($"Cannot operate with {operand}");
     }
+
+    private long bst2(int operand, long? overrideA = null)
+    {
+        if (operand <= 3 || operand == 7)
+            return operand;
+        else if (operand == 4)
+            return (overrideA ?? Registers['A']) % 8;
+        else if (operand == 5)
+            return Registers['B'] % 8;
+        else if (operand == 6)
+            return Registers['C'] % 8;
+        else throw new InvalidOperationException($"Cannot operate with {operand}");
+    }
+
 
     private int jnz(int operand, int pointer)
     {
