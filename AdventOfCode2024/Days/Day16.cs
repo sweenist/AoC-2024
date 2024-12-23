@@ -71,10 +71,6 @@ public class Day16 : IDay
     public void Part2()
     {
         var (round1, _) = _maze.Traverse(findGoodSeats: true);
-        // var maze = new Maze(_input);
-        // maze.Configure(_input, true);
-        // var (round2, _) = maze.Traverse(findGoodSeats: true);
-        // var result = round1.Select(x => x.Location).Concat(round2.Select(x => x.Location)).Distinct().Count();
 
         Console.WriteLine($"The number of paths around the best seats are {round1.Count}");
     }
