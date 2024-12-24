@@ -72,6 +72,8 @@ public partial class Day21 : IDay
     private List<Vector> InitializeNumberSequence(string sequence)
     {
         var visited = sequence.Select(s => _numPad[s]).Prepend(_numPad['A']);
-        return visited.Zip(visited.Skip(1), (target, src) => Vector.Delta(src, target)).ToList();
+        var vectorDeltas = visited.Zip(visited.Skip(1), (target, src) => Vector.Delta(src, target))
+                                  .SelectMany(x => new[] { x, Vector.Zero });
+        return vectorDeltas.ToList();
     }
 }
