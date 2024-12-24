@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace AdventOfCode2024.Days;
 
 public class Day24 : IDay
@@ -102,7 +104,15 @@ tnw OR pbm -> gnj";
             .ToList();
 
         Operate(instructions, buffers);
+        var bogus = new KeyValuePair<string, (string, string)>(string.Empty, (string.Empty, string.Empty));
+        var matchedBits = AddBuffers(buffers);
+        var chains = matchedBits.SelectMany((m, i) => m ? [bogus] : BackChain(buffers.Keys
+                                    .Where(k => k.StartsWith('z'))
+                                    .OrderBy(x => x).ToList()[i]))
+                                .Where(x => x.Key != bogus.Key)
+                                .Distinct().ToDictionary();
 
+        Console.WriteLine($"There are {chains.Count} chains");
 
         Console.WriteLine($"Buffer swaps performed on: ");
     }
@@ -153,10 +163,57 @@ tnw OR pbm -> gnj";
         return result;
     }
 
-    private static void AddBuffers(Dictionary<string, byte?> buffers)
+    private IEnumerable<KeyValuePair<string, (string left, string right)>> BackChain(string tail)
     {
-        var originalZValue = GetAddressBuffer(buffers);
+        var pattern = @"(?<left>\w+)\s\w+\s(?<right>\w+)\s->\s(?<buffer>\w+)";
+        var groups = Regex.Matches(string.Join('\n', _input), pattern);
 
+        return Chain(groups, tail);
+    }
+
+    private static IEnumerable<KeyValuePair<string, (string left, string right)>> Chain(MatchCollection tokens, string tail)
+    {
+        if (tail.StartsWith('x') || tail.StartsWith('y')) yield break;
+
+        var match = tokens.First(m => m.Groups["buffer"].Value == tail);
+        var (left, right, buffer) = (match.Groups["left"].Value, match.Groups["right"].Value, match.Groups["buffer"].Value);
+        Console.WriteLine($"{buffer}: left {left} right: {right}");
+
+        yield return new KeyValuePair<string, (string left, string right)>(buffer, (left, right));
+        foreach (var chain in Chain(tokens, left).Concat(Chain(tokens, right)))
+            yield return chain;
+
+    }
+
+    private static List<bool> AddBuffers(Dictionary<string, byte?> buffers)
+    {
+        var originalZValue = Convert.ToString(GetAddressBuffer(buffers), 2);
+
+        var xBufferValue = GetAddressBuffer(buffers, 'x');
+        var yBufferValue = GetAddressBuffer(buffers, 'y');
+        var realZValue = xBufferValue + yBufferValue;
+
+        Console.WriteLine($"  {Convert.ToString(xBufferValue, 2)}\n +{Convert.ToString(yBufferValue, 2)}\n={Convert.ToString(realZValue, 2)}");
+        Console.WriteLine($" {originalZValue} was expected");
+        var indexHelpers = BuildIndexString(originalZValue.Length);
+        Console.WriteLine($"\n {indexHelpers[0]}\n {indexHelpers[1]}");
+
+        return Convert.ToString(realZValue, 2).Zip(originalZValue, (r, o) => r == o).ToList();
+    }
+
+    private static List<string> BuildIndexString(int stringLength)
+    {
+        var top = "";
+        var bottom = "";
+        while (stringLength != 0)
+        {
+            var b = stringLength % 10 == 0 ? 10 : stringLength % 10;
+            var t = stringLength / 10 - (b == 10 ? 1 : 0);
+            top += t == 0 ? string.Join("", Enumerable.Repeat(' ', b)) : string.Join("", Enumerable.Repeat(t.ToString(), b));
+            _ = Enumerable.Range(0, b).Reverse().Select(x => bottom += x.ToString()).ToList();
+            stringLength -= b;
+        }
+        return [bottom, top];
     }
 }
 
