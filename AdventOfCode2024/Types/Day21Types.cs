@@ -1,6 +1,6 @@
 using AdventOfCode2024.Utility.Math;
 
-namespace AdventOfCode2024.Types;
+namespace AdventOfCode2024.Types.Day21;
 
 public enum KeyPad
 {
@@ -29,9 +29,13 @@ public class DirectionalSpecifications
     public List<Vector> Left { get; set; }
     public List<Vector> Right { get; set; }
 
-    public void Move(Vector source)
+    public List<Vector> Move(Vector source)
     {
-        //TODO:
+        return source == Vector.North ? Up
+            : source == Vector.East ? Right
+            : source == Vector.South ? Down
+            : source == Vector.West ? Left
+            : Activate;
     }
 
     private void ConstructButton()
@@ -91,9 +95,59 @@ public class DirectionalSpecifications
 
 public class SpecManager
 {
+    private readonly Dictionary<Point, DirectionalSpecifications> _dirPad = new(){
+        { new Point(1,0), Up},
+        { new Point(2,0), Activate},  //Activate Button
+        { new Point(0,1), Left},
+        { new Point(1,1), Down},
+        { new Point(2,1), Right},
+    };
+
+    private readonly Dictionary<Vector, Point> _vectorMapping = new(){
+        {Vector.North, new Point(1,0)},
+        {Vector.Zero, new Point(2,0)},  //Activate Button
+        {Vector.West, new Point(0,1)},
+        {Vector.South, new Point(1,1)},
+        {Vector.East, new Point(2,1)},
+    };
+
     public static DirectionalSpecifications Activate => new(KeyPad.Activate);
     public static DirectionalSpecifications Up => new(KeyPad.Up);
     public static DirectionalSpecifications Down => new(KeyPad.Down);
     public static DirectionalSpecifications Left => new(KeyPad.Left);
     public static DirectionalSpecifications Right => new(KeyPad.Right);
+
+    public Point GetNewPosition(Vector target) => _vectorMapping[target];
+
+
+    public List<Vector> Act(Point robotPosition, Vector target)
+    {
+        return _dirPad[robotPosition].Move(target);
+    }
+}
+
+public class Robot
+{
+    private readonly SpecManager _moveManager;
+    public Robot(SpecManager manager)
+    {
+        _moveManager = manager;
+        CurrentPosition = new Point(2, 0); //Activate button
+    }
+
+    public Point CurrentPosition { get; set; }
+    public Robot? Controller { get; set; }
+    public long ActionsPerformed { get; set; }
+
+    public void Move(Vector target, bool act = false)
+    {
+        var targets = _moveManager.Act(CurrentPosition, target);
+        ActionsPerformed += targets.Count;
+        CurrentPosition = _moveManager.GetNewPosition(target);
+
+        foreach (var t in targets)
+            Controller?.Move(t, act);
+        if (!(targets.Count == 1 || targets.First().Equals(Vector.Zero)))
+            ActionsPerformed += 1; // act at the end of target set
+    }
 }

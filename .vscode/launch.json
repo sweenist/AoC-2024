@@ -14,7 +14,7 @@
         "--day",
         "21",
         "--part",
-        "2",
+        "1",
         "-e"
       ],
       "cwd": "${workspaceFolder}",

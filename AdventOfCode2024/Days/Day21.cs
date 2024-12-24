@@ -1,5 +1,5 @@
+using AdventOfCode2024.Types.Day21;
 using AdventOfCode2024.Utility.Math;
-using static AdventOfCode2024.Utility.Math.VectorExtensions;
 
 namespace AdventOfCode2024.Days;
 
@@ -25,25 +25,8 @@ public partial class Day21 : IDay
         {'0', new Point(1,3)},
         {'A', new Point(2,3)},
     };
-    /*
-         0   1   2
-           +---+---+
-    0      | ^ | A |
-       +---+---+---+
-    1  | < + v | > |
-       +---+---+---+
-    */
-    private readonly Dictionary<Vector, Point> _dirPad = new(){
-        {Vector.North, new Point(1,0)},
-        {Vector.Zero, new Point(2,0)},  //Activate Button
-        {Vector.West, new Point(0,1)},
-        {Vector.South, new Point(1,1)},
-        {Vector.East, new Point(2,1)},
-    };
 
     private readonly List<string> _input = [];
-
-    const int ACTIVATE = 1;
 
     public Day21(bool useExample = false)
     {
@@ -62,12 +45,20 @@ public partial class Day21 : IDay
 
     public void Part1()
     {
-        var totalComplexity = 0;
+        var totalComplexity = 0L;
+        var manager = new SpecManager();
+        var radiationRobot = new Robot(manager);
+        var freezingTobot = new Robot(manager);
+
+        radiationRobot.Controller = freezingTobot;
+
         foreach (var sequence in _input)
         {
-            InitializeNumberSequence(sequence);
-            // Robots recursively managing movements from vectors
+            var keySequence = InitializeNumberSequence(sequence);
+            radiationRobot.Move(keySequence[0]);
+            totalComplexity += int.Parse(sequence.Trim('A')) * freezingTobot.ActionsPerformed;
 
+            Console.WriteLine($"{sequence} had {freezingTobot.ActionsPerformed} moves");
         }
 
         Console.WriteLine($"Total complexity keypad movements is {totalComplexity}");
@@ -81,6 +72,6 @@ public partial class Day21 : IDay
     private List<Vector> InitializeNumberSequence(string sequence)
     {
         var visited = sequence.Select(s => _numPad[s]).Prepend(_numPad['A']);
-        return visited.Zip(visited.Skip(1), (src, target) => Vector.Delta(src, target)).ToList();
+        return visited.Zip(visited.Skip(1), (target, src) => Vector.Delta(src, target)).ToList();
     }
 }
