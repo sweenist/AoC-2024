@@ -71,7 +71,7 @@ tnw OR pbm -> gnj";
 
     public void Part1()
     {
-        var buffers = _input.Where(s => s.Contains(':'))
+        var outputBuffers = _input.Where(s => s.Contains(':'))
                                   .Select(x => new KeyValuePair<string, byte?>(x.Split(':')[0], byte.Parse(x.Split(':')[1])))
                                   .Concat(_input.Where(s => s.Contains("->"))
                                     .Select(x => new KeyValuePair<string, byte?>(x.Split("->")[1].Trim(), null)))
@@ -79,12 +79,11 @@ tnw OR pbm -> gnj";
 
         var instructions = _input.Where(s => s.Contains("->"))
             .OrderBy(x => x, new GateComparer(StringComparer.CurrentCulture))
-            .Select(s => s.Split())
-            .Select(s => (buffer1: s[0], opcode: s[1], buffer2: s[2], targetBuffer: s[4]))
+            .Select(Instruction.Create)
             .ToList();
 
-        Operate(instructions, buffers);
-        var result = GetAddressBuffer(buffers);
+        Operate(instructions, outputBuffers);
+        var result = GetAddressBuffer(outputBuffers);
 
         Console.WriteLine($"The z buffer produces {result}");
     }
@@ -99,8 +98,7 @@ tnw OR pbm -> gnj";
 
         var instructions = _input.Where(s => s.Contains("->"))
             .OrderBy(x => x, new GateComparer(StringComparer.InvariantCulture))
-            .Select(s => s.Split())
-            .Select(s => (buffer1: s[0], opcode: s[1], buffer2: s[2], targetBuffer: s[4]))
+            .Select(Instruction.Create)
             .ToList();
 
         // ValidateInstructions(instructions)
@@ -109,24 +107,23 @@ tnw OR pbm -> gnj";
         Console.WriteLine($"Buffer swaps performed on: ");
     }
 
-    public static void Operate(IEnumerable<(string buffer1, string opcode, string buffer2, string targetBuffer)> instructions,
+    public static void Operate(IEnumerable<Instruction> instructions,
         Dictionary<string, byte?> bufferValues)
     {
-        var uninitiated = new Queue<(string buffer1, string opcode, string buffer2, string targetBuffer)>(instructions);
+        var uninitiated = new Queue<Instruction>(instructions);
 
         while (uninitiated.Count > 0)
         {
-            var (buffer1, opcode, buffer2, targetBuffer) = uninitiated.Dequeue();
+            var circuit = uninitiated.Dequeue();
 
-            var found = bufferValues.TryGetValue(buffer1, out var left);
-            found |= bufferValues.TryGetValue(buffer2, out var right);
+            var found = bufferValues.TryGetValue(circuit.Left, out var left);
+            found |= bufferValues.TryGetValue(circuit.Right, out var right);
             if (!found || !left.HasValue || !right.HasValue)
             {
-                uninitiated.Enqueue((buffer1, opcode, buffer2, targetBuffer));
+                uninitiated.Enqueue(circuit);
                 continue;
             }
-            //TODO: use instruction
-            // bufferValues[targetBuffer] = Perform(left.Value, right.Value, opcode);
+            bufferValues[circuit.Output] = circuit.Perform(left.Value, right.Value);
         }
     }
 
@@ -143,32 +140,6 @@ tnw OR pbm -> gnj";
         }
 
         return result;
-    }
-
-    private IEnumerable<KeyValuePair<string, (string left, string right)>> BackChain(string tail, bool debug = false)
-    {
-        var pattern = @"(?<left>\w+)\s(?<op>\w+)\s(?<right>\w+)\s->\s(?<buffer>\w+)";
-        var groups = Regex.Matches(string.Join('\n', _input), pattern);
-
-        if (debug) Console.WriteLine("chaining {tail}");
-
-        return Chain(groups, tail, debug);
-    }
-
-    private static IEnumerable<KeyValuePair<string, (string left, string right)>> Chain(MatchCollection tokens, string tail, bool debug = false, int depth = 0)
-    {
-        if (tail.StartsWith('x') || tail.StartsWith('y')) yield break;
-
-        var match = tokens.First(m => m.Groups["buffer"].Value == tail);
-        var (left, right, buffer, op) = (match.Groups["left"].Value, match.Groups["right"].Value, match.Groups["buffer"].Value, match.Groups["op"].Value);
-
-        if (debug)
-            Console.WriteLine($"{depth}: {left} {op} {right}: {buffer}");
-
-        yield return new KeyValuePair<string, (string left, string right)>(buffer, (left, right));
-        foreach (var chain in Chain(tokens, left, debug, depth + 1).Concat(Chain(tokens, right, debug, depth + 1)))
-            yield return chain;
-
     }
 
     private static List<bool> AddBuffers(Dictionary<string, byte?> buffers)
@@ -203,7 +174,7 @@ tnw OR pbm -> gnj";
     }
 }
 
-internal record Instruction
+public record Instruction
 {
     public Instruction(string instruction)
     {
@@ -215,10 +186,11 @@ internal record Instruction
         Operator = matched.Groups["op"].Value;
         Output = matched.Groups["buffer"].Value;
     }
-    string Left { get; set; }
-    string Right { get; set; }
-    string Operator { get; set; }
-    string Output { get; set; }
+    public static Instruction Create(string instruction) => new(instruction);
+    public string Left { get; set; }
+    public string Right { get; set; }
+    public string Operator { get; set; }
+    public string Output { get; set; }
     public byte Perform(int left, int right)
     {
         return Operator switch
