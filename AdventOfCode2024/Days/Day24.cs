@@ -103,16 +103,8 @@ tnw OR pbm -> gnj";
             .Select(s => (buffer1: s[0], opcode: s[1], buffer2: s[2], targetBuffer: s[4]))
             .ToList();
 
-        Operate(instructions, buffers);
-        var bogus = new KeyValuePair<string, (string, string)>(string.Empty, (string.Empty, string.Empty));
-        var matchedBits = AddBuffers(buffers);
-        var chains = matchedBits.SelectMany((m, i) => m ? [bogus] : BackChain(buffers.Keys
-                                    .Where(k => k.StartsWith('z'))
-                                    .OrderBy(x => x).ToList()[i]))
-                                .Where(x => x.Key != bogus.Key)
-                                .Distinct().ToDictionary();
+        // ValidateInstructions(instructions)
 
-        Console.WriteLine($"There are {chains.Count} chains");
 
         Console.WriteLine($"Buffer swaps performed on: ");
     }
@@ -121,7 +113,6 @@ tnw OR pbm -> gnj";
         Dictionary<string, byte?> bufferValues)
     {
         var uninitiated = new Queue<(string buffer1, string opcode, string buffer2, string targetBuffer)>(instructions);
-
 
         while (uninitiated.Count > 0)
         {
@@ -134,21 +125,12 @@ tnw OR pbm -> gnj";
                 uninitiated.Enqueue((buffer1, opcode, buffer2, targetBuffer));
                 continue;
             }
-
-            bufferValues[targetBuffer] = Perform(left.Value, right.Value, opcode);
+            //TODO: use instruction
+            // bufferValues[targetBuffer] = Perform(left.Value, right.Value, opcode);
         }
     }
 
-    private static byte Perform(byte left, byte right, string opcode)
-    {
-        return opcode switch
-        {
-            "OR" => (left == 1 || right == 1) ? (byte)1 : (byte)0,
-            "XOR" => (left == 1 ^ right == 1) ? (byte)1 : (byte)0,
-            "AND" => (left == 1 && right == 1) ? (byte)1 : (byte)0,
-            _ => throw new Exception("opcode not found")
-        };
-    }
+
 
     private static long GetAddressBuffer(Dictionary<string, byte?> buffers, char bufferStart = 'z')
     {
@@ -163,24 +145,28 @@ tnw OR pbm -> gnj";
         return result;
     }
 
-    private IEnumerable<KeyValuePair<string, (string left, string right)>> BackChain(string tail)
+    private IEnumerable<KeyValuePair<string, (string left, string right)>> BackChain(string tail, bool debug = false)
     {
-        var pattern = @"(?<left>\w+)\s\w+\s(?<right>\w+)\s->\s(?<buffer>\w+)";
+        var pattern = @"(?<left>\w+)\s(?<op>\w+)\s(?<right>\w+)\s->\s(?<buffer>\w+)";
         var groups = Regex.Matches(string.Join('\n', _input), pattern);
 
-        return Chain(groups, tail);
+        if (debug) Console.WriteLine("chaining {tail}");
+
+        return Chain(groups, tail, debug);
     }
 
-    private static IEnumerable<KeyValuePair<string, (string left, string right)>> Chain(MatchCollection tokens, string tail)
+    private static IEnumerable<KeyValuePair<string, (string left, string right)>> Chain(MatchCollection tokens, string tail, bool debug = false, int depth = 0)
     {
         if (tail.StartsWith('x') || tail.StartsWith('y')) yield break;
 
         var match = tokens.First(m => m.Groups["buffer"].Value == tail);
-        var (left, right, buffer) = (match.Groups["left"].Value, match.Groups["right"].Value, match.Groups["buffer"].Value);
-        Console.WriteLine($"{buffer}: left {left} right: {right}");
+        var (left, right, buffer, op) = (match.Groups["left"].Value, match.Groups["right"].Value, match.Groups["buffer"].Value, match.Groups["op"].Value);
+
+        if (debug)
+            Console.WriteLine($"{depth}: {left} {op} {right}: {buffer}");
 
         yield return new KeyValuePair<string, (string left, string right)>(buffer, (left, right));
-        foreach (var chain in Chain(tokens, left).Concat(Chain(tokens, right)))
+        foreach (var chain in Chain(tokens, left, debug, depth + 1).Concat(Chain(tokens, right, debug, depth + 1)))
             yield return chain;
 
     }
@@ -214,6 +200,34 @@ tnw OR pbm -> gnj";
             stringLength -= b;
         }
         return [bottom, top];
+    }
+}
+
+internal record Instruction
+{
+    public Instruction(string instruction)
+    {
+        var pattern = @"(?<left>\w+)\s(?<op>\w+)\s(?<right>\w+)\s->\s(?<buffer>\w+)";
+        var matched = Regex.Match(string.Join('\n', instruction), pattern);
+
+        Left = matched.Groups["left"].Value;
+        Right = matched.Groups["right"].Value;
+        Operator = matched.Groups["op"].Value;
+        Output = matched.Groups["buffer"].Value;
+    }
+    string Left { get; set; }
+    string Right { get; set; }
+    string Operator { get; set; }
+    string Output { get; set; }
+    public byte Perform(int left, int right)
+    {
+        return Operator switch
+        {
+            "OR" => (left == 1 || right == 1) ? (byte)1 : (byte)0,
+            "XOR" => (left == 1 ^ right == 1) ? (byte)1 : (byte)0,
+            "AND" => (left == 1 && right == 1) ? (byte)1 : (byte)0,
+            _ => throw new Exception("opcode not found")
+        };
     }
 }
 
