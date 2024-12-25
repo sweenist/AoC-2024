@@ -72,9 +72,7 @@ tnw OR pbm -> gnj";
     public void Part1()
     {
         var outputBuffers = _input.Where(s => s.Contains(':'))
-                                  .Select(x => new KeyValuePair<string, byte?>(x.Split(':')[0], byte.Parse(x.Split(':')[1])))
-                                  .Concat(_input.Where(s => s.Contains("->"))
-                                    .Select(x => new KeyValuePair<string, byte?>(x.Split("->")[1].Trim(), null)))
+                                  .Select(x => new KeyValuePair<string, byte>(x.Split(':')[0], byte.Parse(x.Split(':')[1])))
                                   .ToDictionary();
 
         var instructions = _input.Where(s => s.Contains("->"))
@@ -91,9 +89,7 @@ tnw OR pbm -> gnj";
     public void Part2()
     {
         var buffers = _input.Where(s => s.Contains(':'))
-                                  .Select(x => new KeyValuePair<string, byte?>(x.Split(':')[0], byte.Parse(x.Split(':')[1])))
-                                  .Concat(_input.Where(s => s.Contains("->"))
-                                    .Select(x => new KeyValuePair<string, byte?>(x.Split("->")[1].Trim(), null)))
+                                  .Select(x => new KeyValuePair<string, byte>(x.Split(':')[0], byte.Parse(x.Split(':')[1])))
                                   .ToDictionary();
 
         var instructions = _input.Where(s => s.Contains("->"))
@@ -108,7 +104,7 @@ tnw OR pbm -> gnj";
     }
 
     public static void Operate(IEnumerable<Instruction> instructions,
-        Dictionary<string, byte?> bufferValues)
+        Dictionary<string, byte> bufferValues)
     {
         var uninitiated = new Queue<Instruction>(instructions);
 
@@ -117,32 +113,33 @@ tnw OR pbm -> gnj";
             var circuit = uninitiated.Dequeue();
 
             var found = bufferValues.TryGetValue(circuit.Left, out var left);
-            found |= bufferValues.TryGetValue(circuit.Right, out var right);
-            if (!found || !left.HasValue || !right.HasValue)
+            found &= bufferValues.TryGetValue(circuit.Right, out var right);
+
+            if (!found)
             {
                 uninitiated.Enqueue(circuit);
                 continue;
             }
-            bufferValues[circuit.Output] = circuit.Perform(left.Value, right.Value);
+            bufferValues[circuit.Output] = circuit.Perform(left, right);
         }
     }
 
 
 
-    private static long GetAddressBuffer(Dictionary<string, byte?> buffers, char bufferStart = 'z')
+    private static long GetAddressBuffer(Dictionary<string, byte> buffers, char bufferStart = 'z')
     {
         var bufferSet = buffers.Where(x => x.Key.StartsWith(bufferStart)).OrderByDescending(z => z.Key);
         var result = 0L;
         foreach (var key in bufferSet)
         {
             result <<= 1;
-            result += buffers[key.Key] ?? 0;
+            result += buffers[key.Key];
         }
 
         return result;
     }
 
-    private static List<bool> AddBuffers(Dictionary<string, byte?> buffers)
+    private static List<bool> AddBuffers(Dictionary<string, byte> buffers)
     {
         var originalZValue = Convert.ToString(GetAddressBuffer(buffers), 2);
 
