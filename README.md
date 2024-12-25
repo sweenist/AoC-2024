@@ -27,7 +27,7 @@ Day 21 &nbsp;🔴
 Day 22 &nbsp;🟢  
 Day 23 &nbsp;🟢  
 Day 24 &nbsp;🟡  
-Day 25 &nbsp;⚫  
+Day 25 &nbsp;🟡  
 
 | | Legend |
 | ----- | ---- | 
