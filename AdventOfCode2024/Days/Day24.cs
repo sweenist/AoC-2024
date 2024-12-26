@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Text.RegularExpressions;
+using AdventOfCode2024.Types.Day24Types;
 
 namespace AdventOfCode2024.Days;
 
@@ -97,10 +99,15 @@ tnw OR pbm -> gnj";
             .Select(Instruction.Create)
             .ToList();
 
-        // ValidateInstructions(instructions)
+        var adderCircuit = CombineCircuits(instructions).ToList();
+        foreach (var circuit in adderCircuit.Where(c => c.Misc.Count > 0))
+        {
+            Console.WriteLine($"Circuit {circuit.BitIndex} has potential problems:");
+            Console.WriteLine($"{string.Join("\n\t", circuit.Misc)}");
+        }
+        var fixedOutputs = adderCircuit.SelectMany(x => x.Fixed).OrderBy(x => x);
 
-
-        Console.WriteLine($"Buffer swaps performed on: ");
+        Console.WriteLine($"Buffer swaps performed on: {string.Join(',', fixedOutputs)}");
     }
 
     public static void Operate(IEnumerable<Instruction> instructions,
@@ -124,7 +131,58 @@ tnw OR pbm -> gnj";
         }
     }
 
+    private static IEnumerable<Circuit> CombineCircuits(List<Instruction> instructions)
+    {
+        var maxBitNumber = instructions.Where(k => k.Output.StartsWith('z'))
+            .Select(k => int.Parse(k.Output.TrimStart('z')))
+            .Max();
+        var carryIn = string.Empty;
 
+        for (var i = 0; i < maxBitNumber; i++)
+        {
+            var inputX = $"x{i.ToString().PadLeft(2, '0')}";
+            var inputY = $"y{i.ToString().PadLeft(2, '0')}";
+
+            var circuit = new Circuit { BitIndex = i };
+            var inputs = instructions.Where(x => x.Left == inputX || x.Left == inputY);
+            circuit.InputAnd = inputs.First(x => x.Operator == "AND");
+            circuit.InputXor = inputs.First(x => x.Operator == "XOR");
+            if (i == 0)
+            {
+                carryIn = circuit.InputAnd.Output;
+                yield return circuit;
+                continue;
+            }
+
+            var sumNode = circuit.InputXor.Output;
+            var nextStages = instructions.Where(inst => inst.HasInput(carryIn))
+                    .Concat(instructions.Where(inst => inst.HasInput(sumNode)))
+                    .Distinct().ToList();
+            circuit.ZOut = nextStages.FirstOrDefault(a => a.HasInput(carryIn)
+                && a.HasInput(sumNode)
+                && a.Operator == "XOR"
+                && a.Output.StartsWith('z'), Circuit.Unassigned);
+            nextStages.Remove(circuit.ZOut);
+
+            circuit.CarryAnd = nextStages.FirstOrDefault(a => a.HasInput(carryIn)
+                && a.HasInput(sumNode)
+                && a.Operator == "AND", Circuit.Unassigned);
+            nextStages.Remove(circuit.CarryAnd);
+
+            circuit.Misc.AddRange(nextStages);
+
+            circuit.CarryOut = instructions.FirstOrDefault(x => (x.HasInput(circuit.CarryAnd.Output)
+                || x.HasInput(circuit.InputAnd.Output)) && x.Operator == "OR", Circuit.Unassigned);
+
+            circuit.Validate();
+            carryIn = circuit.CarryOut.Output;
+
+
+            if (circuit.CarryOut == Circuit.Unassigned) Console.WriteLine($"Could not find viable Cout at index {i}");
+
+            yield return circuit;
+        }
+    }
 
     private static long GetAddressBuffer(Dictionary<string, byte> buffers, char bufferStart = 'z')
     {
@@ -171,34 +229,6 @@ tnw OR pbm -> gnj";
     }
 }
 
-public record Instruction
-{
-    public Instruction(string instruction)
-    {
-        var pattern = @"(?<left>\w+)\s(?<op>\w+)\s(?<right>\w+)\s->\s(?<buffer>\w+)";
-        var matched = Regex.Match(string.Join('\n', instruction), pattern);
-
-        Left = matched.Groups["left"].Value;
-        Right = matched.Groups["right"].Value;
-        Operator = matched.Groups["op"].Value;
-        Output = matched.Groups["buffer"].Value;
-    }
-    public static Instruction Create(string instruction) => new(instruction);
-    public string Left { get; set; }
-    public string Right { get; set; }
-    public string Operator { get; set; }
-    public string Output { get; set; }
-    public byte Perform(int left, int right)
-    {
-        return Operator switch
-        {
-            "OR" => (left == 1 || right == 1) ? (byte)1 : (byte)0,
-            "XOR" => (left == 1 ^ right == 1) ? (byte)1 : (byte)0,
-            "AND" => (left == 1 && right == 1) ? (byte)1 : (byte)0,
-            _ => throw new Exception("opcode not found")
-        };
-    }
-}
 
 internal class GateComparer(IComparer<string> baseComparer) : IComparer<string>
 {
