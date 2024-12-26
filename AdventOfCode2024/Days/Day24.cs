@@ -84,6 +84,7 @@ tnw OR pbm -> gnj";
 
         Operate(instructions, outputBuffers);
         var result = GetAddressBuffer(outputBuffers);
+        AddBuffers(outputBuffers);
 
         Console.WriteLine($"The z buffer produces {result}");
     }
@@ -99,14 +100,18 @@ tnw OR pbm -> gnj";
             .Select(Instruction.Create)
             .ToList();
 
-        var adderCircuit = CombineCircuits(instructions).ToList();
-        foreach (var circuit in adderCircuit.Where(c => c.Misc.Count > 0))
+        var adderCircuit = CombineCircuits(instructions, buffers).ToList();
+
+        byte? carryIn = null;
+        foreach (var circuit in adderCircuit)
         {
-            Console.WriteLine($"Circuit {circuit.BitIndex} has potential problems:");
-            Console.WriteLine($"{string.Join("\n\t", circuit.Misc)}");
+            carryIn = circuit.Execute(carryIn);
         }
+        var result = string.Join("", adderCircuit.Select(x => x.ZO));
+        result = string.Join("", result.Reverse());
         var fixedOutputs = adderCircuit.SelectMany(x => x.Fixed).OrderBy(x => x);
 
+        Console.WriteLine($"result = {result}");
         Console.WriteLine($"Buffer swaps performed on: {string.Join(',', fixedOutputs)}");
     }
 
@@ -131,7 +136,7 @@ tnw OR pbm -> gnj";
         }
     }
 
-    private static IEnumerable<Circuit> CombineCircuits(List<Instruction> instructions)
+    private static IEnumerable<Circuit> CombineCircuits(List<Instruction> instructions, Dictionary<string, byte> inputValues)
     {
         var maxBitNumber = instructions.Where(k => k.Output.StartsWith('z'))
             .Select(k => int.Parse(k.Output.TrimStart('z')))
@@ -143,7 +148,7 @@ tnw OR pbm -> gnj";
             var inputX = $"x{i.ToString().PadLeft(2, '0')}";
             var inputY = $"y{i.ToString().PadLeft(2, '0')}";
 
-            var circuit = new Circuit { BitIndex = i };
+            var circuit = new Circuit { BitIndex = i, XIn = inputValues[inputX], YIn = inputValues[inputY] };
             var inputs = instructions.Where(x => x.Left == inputX || x.Left == inputY);
             circuit.InputAnd = inputs.First(x => x.Operator == "AND");
             circuit.InputXor = inputs.First(x => x.Operator == "XOR");

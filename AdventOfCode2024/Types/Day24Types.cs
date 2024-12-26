@@ -41,6 +41,9 @@ public class Circuit
 {
     public int BitIndex { get; set; }
     public bool IsTerminus { get; set; }
+    public byte XIn { get; set; }
+    public byte YIn { get; set; }
+    public byte ZO { get; set; }
     public Instruction InputXor { get; set; } = Unassigned;
     public Instruction InputAnd { get; set; } = Unassigned;
 
@@ -56,6 +59,20 @@ public class Circuit
     public List<Instruction> Misc { get; set; } = [];
     public List<string> Fixed { get; set; } = [];
 
+    public byte Execute(int? carryIn = null)
+    {
+        var sum = InputXor.Perform(XIn, YIn);
+        var c1 = InputAnd.Perform(XIn, YIn);
+        if (carryIn == null)
+        {
+            ZO = sum;
+            return c1;
+        }
+        var cAnd = CarryAnd?.Perform(sum, carryIn.Value);
+        ZO = ZOut.Perform(sum, carryIn.Value);
+        return CarryOut?.Perform(cAnd.Value, c1) ?? throw new Exception($"Invalid circuit {BitIndex}");
+    }
+
     public bool Validate()
     {
         if (!IsTerminus && (CarryOut?.Output.StartsWith('z') ?? false))
@@ -66,7 +83,7 @@ public class Circuit
                 Misc.Remove(ZOut);
                 (ZOut.Output, CarryOut.Output) = (CarryOut.Output, ZOut.Output);
                 Fixed.AddRange([CarryOut.Output, ZOut.Output]);
-                Console.WriteLine($"{BitIndex}(fixed): found zout in CarryOut\n{this}");
+                Console.WriteLine($"{BitIndex}(fixed): found zout in CarryOut");
             }
         }
         if (!IsTerminus)
@@ -81,7 +98,7 @@ public class Circuit
                 CarryOut = Misc.First(x => x.Operator == "OR");
                 Misc.RemoveAll(x => x.Equals(ZOut) || ZOut.Equals(CarryAnd) || x.Equals(CarryOut));
 
-                Console.WriteLine($"{BitIndex}(fixed): Swapped Input outputs\n{this}");
+                Console.WriteLine($"{BitIndex}(fixed): Swapped Input outputs");
             }
 
             if (ZOut == Unassigned)
@@ -92,7 +109,7 @@ public class Circuit
                     (ZOut.Output, InputAnd.Output) = (InputAnd.Output, ZOut.Output);
                     Fixed.AddRange([InputAnd.Output, ZOut.Output]);
 
-                    Console.WriteLine($"{BitIndex}(fixed): ZOut swap with input AND\n{this}");
+                    Console.WriteLine($"{BitIndex}(fixed): ZOut swap with input AND");
                 }
                 else if (CarryAnd?.Output.StartsWith('z') ?? false)
                 {
@@ -101,10 +118,8 @@ public class Circuit
                     (CarryAnd.Output, ZOut.Output) = (ZOut.Output, CarryAnd.Output);
                     Fixed.AddRange([ZOut.Output, CarryAnd.Output]);
 
-                    Console.WriteLine($"{BitIndex}(fixed): ZOut swap with carry AND\n{this}");
+                    Console.WriteLine($"{BitIndex}(fixed): ZOut swap with carry AND");
                 }
-
-            // Console.WriteLine(this);
         }
         return true;
     }
