@@ -53,11 +53,27 @@ public class Day20 : IDay
     {
         var maze = new Map(_input);
         var paths = maze.Traverse();
+        var cheatGroups = GetEligibleCheatPoints(paths);
 
-        var cheats = maze.CheatPlus(paths);//.GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
+        var cheats = maze.CheatPlus(paths, cheatGroups).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
+        Console.WriteLine($"{string.Join("\n\t", cheats.Select(c => $"{c.Key}: {c.Value}"))}");
         // var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
         // Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
 
+    }
+
+    private static Dictionary<Point, List<(Point Point, int DIstance)>> GetEligibleCheatPoints(Dictionary<Point, int> paths)
+    {
+        var returnCache = new Dictionary<Point, List<(Point Point, int DIstance)>>();
+        foreach (var key in paths.Keys)
+        {
+            var maxDistance = paths[key];
+            var potentialCheats = paths.Where(kvp => kvp.Value < maxDistance && kvp.Key.ManhattanDistance(key) < 20)
+                .Select(kvp => (Point: kvp.Key, Distance: kvp.Value)).ToList();
+            returnCache.Add(key, potentialCheats);
+        }
+
+        return returnCache;
     }
 
     private record Map
@@ -131,25 +147,37 @@ public class Day20 : IDay
             return savedSeconds;
         }
 
-        public List<int> CheatPlus(Dictionary<Point, int> traversed)
+        public List<int> CheatPlus(Dictionary<Point, int> traversed, Dictionary<Point, List<(Point Point, int Distance)>> cheatGroups)
         {
             var savedSeconds = new List<int>();
-            var path = traversed.Select(d => d.Key).ToList();
-            var index = path.Count - 1;
 
-            while (index != 0)
+            foreach (var key in cheatGroups.Keys)
             {
-                var node = path[index];
-
-                if (path[index].ManhattanDistance(End) <= 20)
+                var pathListPoints = cheatGroups[key].Select(p => p.Point).ToList();
+                var q = new Queue<(int Steps, Point Node)>();
+                var visited = new HashSet<Point>([key]);
+                foreach (var p in Vector.CardinalPoints.Select(v => (Steps: 1, Node: key + v)).Where(x => !Walkable[x.Node.X, x.Node.Y]))
+                    q.Enqueue(p);
+                while (q.Count > 0)
                 {
-                    var searchVector = Vector.Unify(End, node);
-                    var cardinals = Vector.CardinalPoints.Where(v => v.X == searchVector.X || v.Y == searchVector.Y);
-                    // while (passWall)
-                }
-                index--;
-            }
+                    var _ = q.TryDequeue(out var n);
+                    visited.Add(n.Node);
+                    var nextPoints = Vector.CardinalPoints.Select(v => n.Node + v)
+                        .Where(v => !visited.Contains(v)).ToList();
 
+                    savedSeconds.AddRange(nextPoints.Intersect(pathListPoints)
+                        .Select(p =>
+                        {
+                            pathListPoints.Remove(p);
+                            return traversed[key] - traversed[p] - (n.Steps + 1);
+                        })
+                        .Where(x => x >= 50));
+
+                    foreach (var nextNode in nextPoints.Where(x => !Bounds.OutOfBounds(x) && !Walkable[x.X, x.Y]))
+                        q.Enqueue((n.Steps + 1, nextNode));
+                }
+                Console.WriteLine($"{key}:\n\t{string.Join("\n\t", cheatGroups[key])}");
+            }
             return savedSeconds;
         }
     }
