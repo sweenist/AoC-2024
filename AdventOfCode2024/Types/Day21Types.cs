@@ -1,4 +1,5 @@
 using AdventOfCode2024.Utility.Math;
+using static AdventOfCode2024.Utility.Math.VectorExtensions;
 
 namespace AdventOfCode2024.Types.Day21;
 
@@ -128,26 +129,53 @@ public class SpecManager
 
 public class Robot
 {
+    private Point _startPosition = new Point(2, 0);
     private readonly SpecManager _moveManager;
-    public Robot(SpecManager manager)
+    public Robot(SpecManager manager, string? name = null)
     {
         _moveManager = manager;
-        CurrentPosition = new Point(2, 0); //Activate button
+        CurrentPosition = _startPosition; //Activate button
+        Name = name ?? Guid.NewGuid().ToString();
     }
 
+    public string Name { get; set; }
     public Point CurrentPosition { get; set; }
     public Robot? Controller { get; set; }
     public long ActionsPerformed { get; set; }
+    public string Actions { get; set; } = string.Empty;
 
-    public void Move(Vector target, bool act = false)
+    public void Move(Vector target, bool draw = false)
     {
         var targets = _moveManager.Act(CurrentPosition, target);
+        Console.WriteLine($"{Name}: target: {target} moves: {targets.Count}");
+
         ActionsPerformed += targets.Count;
+
+        Console.WriteLine($"{Name}: CurrentPosition (before): {CurrentPosition}");
         CurrentPosition = _moveManager.GetNewPosition(target);
+        Console.WriteLine($"{Name}: CurrentPosition (after): {CurrentPosition}");
+
+        if (draw) Actions += string.Join("", targets.Select(v => MapTokens[v]));
+        Console.WriteLine($"{Name}:\t\t{Actions}");
 
         foreach (var t in targets)
-            Controller?.Move(t, act);
-        if (!(targets.Count == 1 || targets.First().Equals(Vector.Zero)))
+            Controller?.Move(t, draw);
+
+        if (!targets.First().Equals(Vector.Zero))
+        {
             ActionsPerformed += 1; // act at the end of target set
+            Actions += 'A';
+
+            Console.WriteLine($"{Name}: Activated");
+            Console.WriteLine($"{Name}:\t\t{Actions}");
+        }
+    }
+
+    public void Reset()
+    {
+        CurrentPosition = _startPosition;
+        ActionsPerformed = 0L;
+        Controller?.Reset();
+        Actions = string.Empty;
     }
 }

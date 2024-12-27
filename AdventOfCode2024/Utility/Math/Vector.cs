@@ -93,12 +93,50 @@ public static class VectorExtensions
             .ToList();
     }
 
+    public static bool IsCardinal(this Vector v) => Vector.CardinalPoints.Contains(v);
+
+    public static int ManhattanDistance(this Vector v) => System.Math.Abs(v.X) + System.Math.Abs(v.Y);
+
     public static List<Vector> PreferFirstCardinal(this List<Vector> v, Vector direction)
     {
         if (!v.Contains(direction)) return v;
         v.Remove(direction);
         v.Insert(0, direction);
         return v;
+    }
+
+    public static IEnumerable<Vector> Stepify(this IEnumerable<Vector> vectors)
+    {
+        using var e = vectors.GetEnumerator();
+        while (e.MoveNext())
+        {
+            if (e.Current == Vector.Zero || e.Current.IsCardinal())
+            {
+                yield return e.Current;
+                continue;
+            }
+            var currentVector = e.Current;
+            while (currentVector.X > 0)
+            {
+                yield return Vector.East;
+                currentVector.X--;
+            }
+            while (currentVector.Y > 0)
+            {
+                yield return Vector.South;
+                currentVector.Y--;
+            }
+            while (currentVector.X < 0)
+            {
+                yield return Vector.West;
+                currentVector.X++;
+            }
+            while (currentVector.Y < 0)
+            {
+                yield return Vector.North;
+                currentVector.Y++;
+            }
+        }
     }
 
     public static Dictionary<ICoordinate, char> MapTokens => new()

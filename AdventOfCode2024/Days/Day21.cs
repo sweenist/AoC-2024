@@ -47,18 +47,24 @@ public partial class Day21 : IDay
     {
         var totalComplexity = 0L;
         var manager = new SpecManager();
-        var radiationRobot = new Robot(manager);
-        var freezingTobot = new Robot(manager);
+        var radiationRobot = new Robot(manager, "Robbie");
+        var freezingTobot = new Robot(manager, "Freyda");
 
         radiationRobot.Controller = freezingTobot;
 
         foreach (var sequence in _input)
         {
-            var keySequence = InitializeNumberSequence(sequence);
-            radiationRobot.Move(keySequence[0]);
+            var blah = InitializeNumberSequence(sequence);
+            foreach (var keySequence in blah)
+                radiationRobot.Move(keySequence, true);
             totalComplexity += int.Parse(sequence.Trim('A')) * freezingTobot.ActionsPerformed;
 
-            Console.WriteLine($"{sequence} had {freezingTobot.ActionsPerformed} moves");
+
+            // Console.WriteLine($"{sequence} had {freezingTobot.ActionsPerformed} moves");
+            // Console.WriteLine($"{radiationRobot.Name}:\n\t{radiationRobot.Actions}");
+            // Console.WriteLine($"{freezingTobot.Name}:\n\t{freezingTobot.Actions}");
+            radiationRobot.Reset();
+            break;
         }
 
         Console.WriteLine($"Total complexity keypad movements is {totalComplexity}");
@@ -73,7 +79,8 @@ public partial class Day21 : IDay
     {
         var visited = sequence.Select(s => _numPad[s]).Prepend(_numPad['A']);
         var vectorDeltas = visited.Zip(visited.Skip(1), (target, src) => Vector.Delta(src, target))
-                                  .SelectMany(x => new[] { x, Vector.Zero });
+                                  .SelectMany(x => new[] { x, Vector.Zero })
+                                  .Stepify();
         return vectorDeltas.ToList();
     }
 }
