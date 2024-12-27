@@ -62,14 +62,14 @@ public class Day20 : IDay
 
     }
 
-    private static Dictionary<Point, List<(Point Point, int DIstance)>> GetEligibleCheatPoints(Dictionary<Point, int> paths)
+    private static Dictionary<Point, List<Point>> GetEligibleCheatPoints(Dictionary<Point, int> paths)
     {
-        var returnCache = new Dictionary<Point, List<(Point Point, int DIstance)>>();
+        var returnCache = new Dictionary<Point, List<Point>>();
         foreach (var key in paths.Keys)
         {
             var maxDistance = paths[key];
             var potentialCheats = paths.Where(kvp => kvp.Value < maxDistance && kvp.Key.ManhattanDistance(key) < 20)
-                .Select(kvp => (Point: kvp.Key, Distance: kvp.Value)).ToList();
+                .Select(kvp => kvp.Key).ToList();
             returnCache.Add(key, potentialCheats);
         }
 
@@ -147,13 +147,13 @@ public class Day20 : IDay
             return savedSeconds;
         }
 
-        public List<int> CheatPlus(Dictionary<Point, int> traversed, Dictionary<Point, List<(Point Point, int Distance)>> cheatGroups)
+        public List<int> CheatPlus(Dictionary<Point, int> traversed, Dictionary<Point, List<Point>> cheatGroups)
         {
             var savedSeconds = new List<int>();
 
             foreach (var key in cheatGroups.Keys)
             {
-                var pathListPoints = cheatGroups[key].Select(p => p.Point).ToList();
+                var pathListPoints = cheatGroups[key];
                 var q = new Queue<(int Steps, Point Node)>();
                 var visited = new HashSet<Point>([key]);
                 foreach (var p in Vector.CardinalPoints.Select(v => (Steps: 1, Node: key + v)).Where(x => !Walkable[x.Node.X, x.Node.Y]))
