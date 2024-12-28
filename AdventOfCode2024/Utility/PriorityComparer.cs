@@ -13,9 +13,9 @@ public class AStarComparer : IComparer<(int, Point)>
     }
 }
 
-public class PriorityComparer : IComparer<(int, Actor)>
+public class PriorityComparer<T> : IComparer<(int, T)> where T : Actor
 {
-    public int Compare((int, Actor) x, (int, Actor) y)
+    public int Compare((int, T) x, (int, T) y)
     {
         var result = x.Item1.CompareTo(y.Item1);
 

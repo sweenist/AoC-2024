@@ -63,21 +63,29 @@ public class Day16 : IDay
 
     public void Part1()
     {
-        var (paths, turns) = _maze.Traverse();
-        var result = paths.Count + turns * 1000;
+        var result = _maze.Traverse().Select(t => t.Item1.Count + t.Turns * 1000).Min();
         Console.WriteLine($"Best reindeer track score is {result}");
     }
 
     public void Part2()
     {
-        var (round1, _) = _maze.Traverse(findGoodSeats: true);
+        var result = _maze.Traverse(findGoodSeats: true).Select(t => t.Item1.Count).Sum();
 
-        Console.WriteLine($"The number of paths around the best seats are {round1.Count}");
+        Console.WriteLine($"The number of paths around the best seats are {result}");
     }
 
-    private record TurnCell : Cell<Actor>
+    private class Reindeer(Point Location, Vector Direction) : Actor(Location, Direction)
     {
-        public TurnCell(Actor Parent, int? startValues = null) : base(Parent)
+        public Reindeer(Point Location, Vector Direction, HashSet<Point> visited) : this(Location, Direction)
+        {
+            Visited = visited;
+        }
+        public HashSet<Point> Visited { get; set; } = new();
+    }
+
+    private record TurnCell : Cell<Reindeer>
+    {
+        public TurnCell(Reindeer Parent, int? startValues = null) : base(Parent)
         {
             if (startValues.HasValue)
             {
@@ -104,12 +112,12 @@ public class Day16 : IDay
                 {
                     var cell = input[y][x];
                     Walkable[x, y] = cell != '#';
-                    Cells[x, y] = new TurnCell(new Actor(new Point(-1, -1), Vector.Zero));
+                    Cells[x, y] = new TurnCell(new Reindeer(new Point(-1, -1), Vector.Zero));
 
                     if (cell == startChar)
                     {
                         Start = new Point(x, y);
-                        Cells[x, y] = new TurnCell(new Actor(Start, Vector.East), 0);
+                        Cells[x, y] = new TurnCell(new Reindeer(Start, Vector.East), 0);
                     }
                     else if (cell == endChar)
                         End = new Point(x, y);
@@ -120,19 +128,17 @@ public class Day16 : IDay
         public Point Start { get; set; }
         public Point End { get; set; }
 
-        public (List<Actor>, int Turns) Traverse(bool findGoodSeats = false)
+        public List<(List<Reindeer>, int Turns)> Traverse(bool findGoodSeats = false)
         {
-            var closedList = new bool[Bounds.Width, Bounds.Height];
-            var startingPoints = new[] { (0, new Actor(Start, Vector.East)) }.ToList();
-
-            var openList = new SortedSet<(int FScore, Actor Reindeer)>(startingPoints, new PriorityComparer());
-
+            var startingPoints = new[] { (0, new Reindeer(Start, Vector.East)) }.ToList();
+            var openList = new SortedSet<(int FScore, Reindeer Reindeer)>(startingPoints, new PriorityComparer<Reindeer>());
+            var returnList = new List<(List<Reindeer>, int Turns)>();
             while (openList.Count > 0)
             {
                 var point = openList.Min;
                 openList.Remove(point);
                 var (_, parent) = point;
-                closedList[parent.Location.X, parent.Location.Y] = true;
+                parent.Visited.Add(parent.Location);
 
                 foreach (var direction in Vector.CardinalPoints.Where(x => x != parent.Direction.Invert()))
                 {
@@ -149,11 +155,10 @@ public class Day16 : IDay
                         cell.Turns = parentCell.Turns;
                         cell.Neighbors.Add(parentCell);
 
-                        parentCell.Neighbors.Add(cell);
-                        return FollowPath(findGoodSeats);
+                        returnList.Add(FollowPath(findGoodSeats));
                     }
 
-                    if (!closedList[nextPosition.X, nextPosition.Y]
+                    if (!parent.Visited.Contains(nextPosition)
                         && Walkable[nextPosition.X, nextPosition.Y])
                     {
                         var parentCell = Cells[parent.Location.X, parent.Location.Y];
@@ -163,12 +168,11 @@ public class Day16 : IDay
                         var f = g + h + turns * 1000;
 
                         var nextCell = Cells[nextPosition.X, nextPosition.Y];
-                        parentCell.Neighbors.Add(nextCell);
 
                         if (nextCell.TotalScore == int.MaxValue || nextCell.TotalScore > f)
                         {
-                            var updatedReindeer = new Actor(nextPosition, direction);
-                            openList.Add((f, updatedReindeer));
+                            var nextReindeer = new Reindeer(nextPosition, direction, [.. parent.Visited]);
+                            openList.Add((f, nextReindeer));
                             nextCell.TotalScore = f;
                             nextCell.Accumulated = g;
                             nextCell.Heuristic = h;
@@ -179,12 +183,12 @@ public class Day16 : IDay
                     }
                 }
             }
-            throw new Exception("Could not find a reasonable path");
+            return returnList;
         }
 
-        private (List<Actor>, int Turns) FollowPath(bool findOtherPaths)
+        private (List<Reindeer>, int Turns) FollowPath(bool findOtherPaths)
         {
-            var path = new List<Actor>();
+            var path = new List<Reindeer>();
             var cells = new HashSet<TurnCell>();
             var y = End.Y;
             var x = End.X;
@@ -195,7 +199,7 @@ public class Day16 : IDay
                 var point = new Point(x, y);
                 var nextParent = Cells[x, y].Parent;
                 var orientation = Vector.Delta(point, nextParent.Location);
-                var pathSegment = new Actor(point, orientation);
+                var pathSegment = new Reindeer(point, orientation);
 
                 path.Add(pathSegment);
                 cells.Add(Cells[x, y]);
@@ -261,7 +265,7 @@ public class Day16 : IDay
 
         }
 
-        private void Print(bool[,] closedList, Actor parent, Point next)
+        private void Print(bool[,] closedList, Reindeer parent, Point next)
         {
             var sb = new StringBuilder();
             for (var y = 0; y < Bounds.Height; y++)
@@ -286,7 +290,7 @@ public class Day16 : IDay
             // Console.ReadKey();
         }
 
-        private void Print(List<Actor> path)
+        private void Print(List<Reindeer> path)
         {
             var sb = new StringBuilder();
 
