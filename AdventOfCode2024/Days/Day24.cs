@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Text.RegularExpressions;
 using AdventOfCode2024.Types.Day24Types;
 
 namespace AdventOfCode2024.Days;

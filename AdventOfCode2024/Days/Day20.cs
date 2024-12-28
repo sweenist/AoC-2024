@@ -1,4 +1,3 @@
-using System.Text;
 using AdventOfCode2024.Types;
 using AdventOfCode2024.Utility.Math;
 

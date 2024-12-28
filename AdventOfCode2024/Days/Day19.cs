@@ -1,5 +1,3 @@
-using AdventOfCode2024.Utility;
-
 namespace AdventOfCode2024.Days;
 
 public class Day19 : IDay
