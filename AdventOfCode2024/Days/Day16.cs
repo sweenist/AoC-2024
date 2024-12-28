@@ -103,6 +103,7 @@ public class Day16 : IDay
                 for (int x = 0; x < Bounds.Width; x++)
                 {
                     var cell = input[y][x];
+                    Walkable[x, y] = cell != '#';
                     Cells[x, y] = new TurnCell(new Actor(new Point(-1, -1), Vector.Zero));
 
                     if (cell == startChar)
