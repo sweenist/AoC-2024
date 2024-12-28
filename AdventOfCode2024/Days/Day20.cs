@@ -153,30 +153,37 @@ public class Day20 : IDay
 
             foreach (var key in cheatGroups.Keys)
             {
-                var pathListPoints = cheatGroups[key];
+                var pathListPoints = cheatGroups[key].Select(p => new KeyValuePair<Point, int>(p, 0))
+                    .ToDictionary();
                 var q = new Queue<(int Steps, Point Node)>();
                 var visited = new HashSet<Point>([key]);
+
                 foreach (var p in Vector.CardinalPoints.Select(v => (Steps: 1, Node: key + v)).Where(x => !Walkable[x.Node.X, x.Node.Y]))
                     q.Enqueue(p);
+
                 while (q.Count > 0)
                 {
                     var _ = q.TryDequeue(out var n);
-                    visited.Add(n.Node);
-                    var nextPoints = Vector.CardinalPoints.Select(v => n.Node + v)
-                        .Where(v => !visited.Contains(v)).ToList();
+                    if (!visited.Add(n.Node) || n.Steps == 20) continue;
 
-                    savedSeconds.AddRange(nextPoints.Intersect(pathListPoints)
-                        .Select(p =>
-                        {
-                            pathListPoints.Remove(p);
-                            return traversed[key] - traversed[p] - (n.Steps + 1);
-                        })
-                        .Where(x => x >= 50));
+                    var nextPoints = Vector.CardinalPoints.Select(v => n.Node + v)
+                        .Where(v => !visited.Contains(v)
+                            && !Bounds.OutOfBounds(v)
+                            && v.ManhattanDistance(key) <= 20).ToList();
+                    if (nextPoints.Count == 0) continue;
+
+                    foreach (var pathPoint in nextPoints.Intersect(pathListPoints.Keys))
+                    {
+                        // if (pathPoint == new Point(1, 9))
+                        Console.WriteLine($"pathPoint: {pathPoint}: Node: {n} Previous: {pathListPoints[pathPoint]}; \n\tmath {traversed[key]} - {traversed[pathPoint]} - ({n.Steps} + 1)\n\t{string.Join(',', nextPoints)}");
+                        pathListPoints[pathPoint] = Math.Max(pathListPoints[pathPoint], traversed[key] - traversed[pathPoint] - (n.Steps + 1));
+                    }
 
                     foreach (var nextNode in nextPoints.Where(x => !Bounds.OutOfBounds(x) && !Walkable[x.X, x.Y]))
                         q.Enqueue((n.Steps + 1, nextNode));
                 }
-                Console.WriteLine($"{key}:\n\t{string.Join("\n\t", cheatGroups[key])}");
+                savedSeconds.AddRange(pathListPoints.Values.Where(i => i >= 50));
+                // Console.WriteLine($"{key}:\n\t{string.Join("\n\t", cheatGroups[key])}");
             }
             return savedSeconds;
         }
