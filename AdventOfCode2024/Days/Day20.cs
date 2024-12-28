@@ -44,7 +44,7 @@ public class Day20 : IDay
         var maze = new Map(_input);
         var paths = maze.Traverse();
 
-        var cheats = maze.Cheat(paths).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
+        var cheats = SimpleCheat(paths, 2).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
         var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
         Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
     }
@@ -53,27 +53,35 @@ public class Day20 : IDay
     {
         var maze = new Map(_input);
         var paths = maze.Traverse();
-        var cheatGroups = GetEligibleCheatPoints(paths);
 
-        var cheats = maze.CheatPlus(paths, cheatGroups).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
-        Console.WriteLine($"{string.Join("\n\t", cheats.Select(c => $"{c.Key}: {c.Value}"))}");
-        // var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
-        // Console.WriteLine($"Time to complete maze with integrity: {hundredPlus}");
+        var cheats = SimpleCheat(paths, 20).GroupBy(x => x).ToDictionary(g => g.Key, x => x.Count());
+        var hundredPlus = cheats.Where(k => k.Key >= 100).Sum(k => k.Value);
+        Console.WriteLine($"Time to complete maze with 20 ps cheats: {hundredPlus}");
 
     }
 
-    private static Dictionary<Point, List<Point>> GetEligibleCheatPoints(Dictionary<Point, int> paths)
+    private static Dictionary<Point, List<Point>> GetEligibleCheatPoints(Dictionary<Point, int> paths, int cheat)
     {
         var returnCache = new Dictionary<Point, List<Point>>();
         foreach (var key in paths.Keys)
         {
             var maxDistance = paths[key];
-            var potentialCheats = paths.Where(kvp => kvp.Value < maxDistance && kvp.Key.ManhattanDistance(key) < 20)
+            var potentialCheats = paths.Where(kvp => kvp.Value < maxDistance && kvp.Key.ManhattanDistance(key) <= cheat)
                 .Select(kvp => kvp.Key).ToList();
             returnCache.Add(key, potentialCheats);
         }
 
         return returnCache;
+    }
+
+    public static List<int> SimpleCheat(Dictionary<Point, int> traversed, int maxCheat)
+    {
+        var results = new List<int>();
+        var eligiblePaths = GetEligibleCheatPoints(traversed, maxCheat);
+        foreach (var path in traversed.Keys)
+            results.AddRange(eligiblePaths[path].Select(x => traversed[path] - traversed[x] - path.ManhattanDistance(x)));
+
+        return results;
     }
 
     private record Map
@@ -84,7 +92,7 @@ public class Day20 : IDay
             Walkable = new bool[Bounds.Width, Bounds.Height];
 
             for (var x = 0; x < Bounds.Width; x++)
-                for (var y = 0; y < Bounds.Width; y++)
+                for (var y = 0; y < Bounds.Height; y++)
                 {
                     var mapChar = input[y][x];
                     Walkable[x, y] = mapChar != '#';
@@ -122,70 +130,6 @@ public class Day20 : IDay
                 }
             }
             return distances;
-        }
-
-        public List<int> Cheat(Dictionary<Point, int> traversed)
-        {
-            var savedSeconds = new List<int>();
-
-            for (var y = 1; y < Bounds.BoundY; y++)
-                for (var x = 1; x < Bounds.BoundX; x++)
-                {
-                    if (Walkable[x, y]) continue;
-                    var wall = new Point(x, y);
-                    foreach (var direction in new[] { Vector.North, Vector.East })
-                    {
-                        var adjacent = wall + direction.Invert();
-                        var otherAdjacent = wall + direction;
-                        if (traversed.TryGetValue(adjacent, out var side1) && traversed.TryGetValue(otherAdjacent, out var side2))
-                        {
-                            savedSeconds.Add(Math.Abs(side1 - side2) - 2);
-                        }
-                    }
-                }
-
-            return savedSeconds;
-        }
-
-        public List<int> CheatPlus(Dictionary<Point, int> traversed, Dictionary<Point, List<Point>> cheatGroups)
-        {
-            var savedSeconds = new List<int>();
-
-            foreach (var key in cheatGroups.Keys)
-            {
-                var pathListPoints = cheatGroups[key].Select(p => new KeyValuePair<Point, int>(p, 0))
-                    .ToDictionary();
-                var q = new Queue<(int Steps, Point Node)>();
-                var visited = new HashSet<Point>([key]);
-
-                foreach (var p in Vector.CardinalPoints.Select(v => (Steps: 1, Node: key + v)).Where(x => !Walkable[x.Node.X, x.Node.Y]))
-                    q.Enqueue(p);
-
-                while (q.Count > 0)
-                {
-                    var _ = q.TryDequeue(out var n);
-                    if (!visited.Add(n.Node) || n.Steps == 20) continue;
-
-                    var nextPoints = Vector.CardinalPoints.Select(v => n.Node + v)
-                        .Where(v => !visited.Contains(v)
-                            && !Bounds.OutOfBounds(v)
-                            && v.ManhattanDistance(key) <= 20).ToList();
-                    if (nextPoints.Count == 0) continue;
-
-                    foreach (var pathPoint in nextPoints.Intersect(pathListPoints.Keys))
-                    {
-                        // if (pathPoint == new Point(1, 9))
-                        Console.WriteLine($"pathPoint: {pathPoint}: Node: {n} Previous: {pathListPoints[pathPoint]}; \n\tmath {traversed[key]} - {traversed[pathPoint]} - ({n.Steps} + 1)\n\t{string.Join(',', nextPoints)}");
-                        pathListPoints[pathPoint] = Math.Max(pathListPoints[pathPoint], traversed[key] - traversed[pathPoint] - (n.Steps + 1));
-                    }
-
-                    foreach (var nextNode in nextPoints.Where(x => !Bounds.OutOfBounds(x) && !Walkable[x.X, x.Y]))
-                        q.Enqueue((n.Steps + 1, nextNode));
-                }
-                savedSeconds.AddRange(pathListPoints.Values.Where(i => i >= 50));
-                // Console.WriteLine($"{key}:\n\t{string.Join("\n\t", cheatGroups[key])}");
-            }
-            return savedSeconds;
         }
     }
 }
