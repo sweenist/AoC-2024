@@ -75,58 +75,49 @@ public class Day16 : IDay
         Console.WriteLine($"The number of paths around the best seats are {round1.Count}");
     }
 
-    private record TurnCell(Actor Parent) : Cell<Actor>(Parent)
+    private record TurnCell : Cell<Actor>
     {
+        public TurnCell(Actor Parent, int? startValues = null) : base(Parent)
+        {
+            if (startValues.HasValue)
+            {
+                Accumulated = startValues.Value;
+                Heuristic = startValues.Value;
+                TotalScore = startValues.Value;
+            }
+        }
+
         public int Turns { get; set; } = 0;
         public List<TurnCell> Neighbors { get; } = [];
     }
 
-    private record Maze
+    private class Maze : TextMap
     {
-        public Maze(string[] input)
+        public Maze(string[] input) : base(input)
         {
-            var height = input.Length;
-            var width = input[0].Length;
-
-            Bounds = new Boundary(height, width);
-            IsWalkable = new bool[Bounds.Width, Bounds.Height];
-            Cells = new TurnCell[Bounds.Width, Bounds.Height];
-            Configure(input);
-        }
-
-        public bool[,] IsWalkable { get; set; }
-        public TurnCell[,] Cells { get; set; }
-        public Boundary Bounds { get; set; }
-        public Point Start { get; set; }
-        public Point End { get; set; }
-
-        public void Configure(string[] input, bool backTrack = false)
-        {
-            var startChar = backTrack ? 'E' : 'S';
-            var endChar = backTrack ? 'S' : 'E';
-            IsWalkable = new bool[Bounds.Width, Bounds.Height];
+            const char startChar = 'S';
+            const char endChar = 'E';
             Cells = new TurnCell[Bounds.Width, Bounds.Height];
 
             for (int y = 0; y < Bounds.Height; y++)
                 for (int x = 0; x < Bounds.Width; x++)
                 {
                     var cell = input[y][x];
-                    IsWalkable[x, y] = cell != '#';
                     Cells[x, y] = new TurnCell(new Actor(new Point(-1, -1), Vector.Zero));
 
                     if (cell == startChar)
                     {
                         Start = new Point(x, y);
-                        Cells[x, y].Parent = new Actor(Start, Vector.East);
-                        Cells[x, y].TotalScore = 0;
-                        Cells[x, y].Accumulated = 0;
-                        Cells[x, y].Heuristic = 0;
-                        Cells[x, y].Turns = 0;
+                        Cells[x, y] = new TurnCell(new Actor(Start, Vector.East), 0);
                     }
                     else if (cell == endChar)
                         End = new Point(x, y);
                 }
         }
+
+        public TurnCell[,] Cells { get; set; }
+        public Point Start { get; set; }
+        public Point End { get; set; }
 
         public (List<Actor>, int Turns) Traverse(bool findGoodSeats = false)
         {
@@ -146,7 +137,7 @@ public class Day16 : IDay
                 {
                     var isTurning = parent.Direction != direction;
                     var nextPosition = parent.Location + direction;
-                    if (!IsWalkable[nextPosition.X, nextPosition.Y])
+                    if (!Walkable[nextPosition.X, nextPosition.Y])
                         continue;
 
                     if (nextPosition == End)
@@ -162,7 +153,7 @@ public class Day16 : IDay
                     }
 
                     if (!closedList[nextPosition.X, nextPosition.Y]
-                        && IsWalkable[nextPosition.X, nextPosition.Y])
+                        && Walkable[nextPosition.X, nextPosition.Y])
                     {
                         var parentCell = Cells[parent.Location.X, parent.Location.Y];
                         var turns = parentCell.Turns + (isTurning ? 1 : 0);
@@ -278,7 +269,7 @@ public class Day16 : IDay
                 {
                     var compPoint = new Point(x, y);
 
-                    if (!IsWalkable[x, y]) sb.Append('#');
+                    if (!Walkable[x, y]) sb.Append('#');
                     else if (compPoint.Equals(Start)) sb.Append('S');
                     else if (compPoint.Equals(End)) sb.Append('E');
                     else if (compPoint.Equals(parent.Location)) sb.Append('O');
@@ -304,7 +295,7 @@ public class Day16 : IDay
                 {
                     var compPoint = new Point(x, y);
                     var step = path.Find(x => x.Location == compPoint);
-                    if (!IsWalkable[x, y]) sb.Append('#');
+                    if (!Walkable[x, y]) sb.Append('#');
                     else if (compPoint.Equals(Start)) sb.Append('S');
                     else if (compPoint.Equals(End)) sb.Append('E');
                     else if (compPoint.Equals(step?.Location)) sb.Append(MapTokens[step.Direction]);
