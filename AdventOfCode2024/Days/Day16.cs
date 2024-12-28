@@ -69,7 +69,8 @@ public class Day16 : IDay
 
     public void Part2()
     {
-        var result = _maze.Traverse(findGoodSeats: true).Select(t => t.Item1.Count).Sum();
+        var paths = _maze.Traverse();
+        var result = _maze.Traverse().Select(t => t.Item1.Count).Sum();
 
         Console.WriteLine($"The number of paths around the best seats are {result}");
     }
@@ -96,7 +97,6 @@ public class Day16 : IDay
         }
 
         public int Turns { get; set; } = 0;
-        public List<TurnCell> Neighbors { get; } = [];
     }
 
     private class Maze : TextMap
@@ -128,7 +128,7 @@ public class Day16 : IDay
         public Point Start { get; set; }
         public Point End { get; set; }
 
-        public List<(List<Reindeer>, int Turns)> Traverse(bool findGoodSeats = false)
+        public List<(List<Reindeer>, int Turns)> Traverse()
         {
             var startingPoints = new[] { (0, new Reindeer(Start, Vector.East)) }.ToList();
             var openList = new SortedSet<(int FScore, Reindeer Reindeer)>(startingPoints, new PriorityComparer<Reindeer>());
@@ -153,9 +153,8 @@ public class Day16 : IDay
                         var cell = Cells[nextPosition.X, nextPosition.Y];
                         cell.Parent = parent;
                         cell.Turns = parentCell.Turns;
-                        cell.Neighbors.Add(parentCell);
 
-                        returnList.Add(FollowPath(findGoodSeats));
+                        returnList.Add(FollowPath());
                     }
 
                     if (!parent.Visited.Contains(nextPosition)
@@ -179,14 +178,13 @@ public class Day16 : IDay
                             nextCell.Parent = parent;
                             nextCell.Turns = turns;
                         }
-                        // Print(closedList, parent, nextPosition);
                     }
                 }
             }
             return returnList;
         }
 
-        private (List<Reindeer>, int Turns) FollowPath(bool findOtherPaths)
+        private (List<Reindeer>, int Turns) FollowPath()
         {
             var path = new List<Reindeer>();
             var cells = new HashSet<TurnCell>();
@@ -207,34 +205,8 @@ public class Day16 : IDay
                 y = nextParent.Location.Y;
             }
 
-            if (findOtherPaths)
-            {
-                // PrintCells();
-                var newPath = BuildAlternatePaths(cells);
-                return (newPath.Select(x => x.Parent).ToList(), 0);
-            }
             Print([.. path]);
             return (path, Cells[End.X, End.Y].Turns);
-        }
-
-        private HashSet<TurnCell> BuildAlternatePaths(HashSet<TurnCell> happyPath)
-        {
-            var newSet = new HashSet<TurnCell>(happyPath);
-            foreach (var path in happyPath)
-            {
-                if (path.Neighbors.Count > 1)
-                {
-                    var possibilities = path.Neighbors.Where(x => !happyPath.Contains(x)).ToList();
-                    // var newCells = possibilities.SelectMany(x => FindCandidates(x, happyPath, visited).ToList()).ToList();
-                    foreach (var candidate in possibilities)
-                    {
-                        var visited = new List<TurnCell>([path]);
-                        var chain = FindCandidates(candidate, happyPath, visited).ToList();
-                        newSet.UnionWith(chain);
-                    }
-                }
-            }
-            return newSet;
         }
 
         private IEnumerable<TurnCell> FindCandidates(TurnCell cell, HashSet<TurnCell> pathCells, List<TurnCell> visited)
