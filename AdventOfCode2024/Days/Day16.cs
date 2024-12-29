@@ -72,18 +72,6 @@ public class Day16 : IDay
         var (_, paths) = _maze.Traverse();
         var result = paths.SelectMany(p => p).Distinct().ToList();
 
-        var sb = new StringBuilder();
-        for (var y = 0; y < _maze.Bounds.Height; y++)
-        {
-            for (var x = 0; x < _maze.Bounds.Width; x++)
-            {
-                if (!_maze.Walkable[x, y]) sb.Append('#');
-                else if (result.Contains(new Point(x, y))) sb.Append('O');
-                else sb.Append('.');
-            }
-            sb.Append('\n');
-        }
-        Console.WriteLine(sb);
         Console.WriteLine($"The number of paths around the best seats are {result.Count}");
     }
 
