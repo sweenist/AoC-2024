@@ -8,39 +8,39 @@ namespace AdventOfCode2024.Days;
 
 public class Day16 : IDay
 {
-    private readonly string _example = @"###############
-#.......#....E#
-#.#.###.#.###.#
-#.....#.#...#.#
-#.###.#####.#.#
-#.#.#.......#.#
-#.#.#####.###.#
-#...........#.#
-###.#.#####.#.#
-#...#.....#.#.#
-#.#.#.###.#.#.#
-#.....#...#.#.#
-#.###.#.#.#.#.#
-#S..#.....#...#
-###############";
+    //     private readonly string _example = @"###############
+    // #.......#....E#
+    // #.#.###.#.###.#
+    // #.....#.#...#.#
+    // #.###.#####.#.#
+    // #.#.#.......#.#
+    // #.#.#####.###.#
+    // #...........#.#
+    // ###.#.#####.#.#
+    // #...#.....#.#.#
+    // #.#.#.###.#.#.#
+    // #.....#...#.#.#
+    // #.###.#.#.#.#.#
+    // #S..#.....#...#
+    // ###############";
 
-    //     private string _example = @"#################
-    // #...#...#...#..E#
-    // #.#.#.#.#.#.#.#.#
-    // #.#.#.#...#...#.#
-    // #.#.#.#.###.#.#.#
-    // #...#.#.#.....#.#
-    // #.#.#.#.#.#####.#
-    // #.#...#.#.#.....#
-    // #.#.#####.#.###.#
-    // #.#.#.......#...#
-    // #.#.###.#####.###
-    // #.#.#...#.....#.#
-    // #.#.#.#####.###.#
-    // #.#.#.........#.#
-    // #.#.#.#########.#
-    // #S#.............#
-    // #################";
+    private string _example = @"#################
+#...#...#...#..E#
+#.#.#.#.#.#.#.#.#
+#.#.#.#...#...#.#
+#.#.#.#.###.#.#.#
+#...#.#.#.....#.#
+#.#.#.#.#.#####.#
+#.#...#.#.#.....#
+#.#.#####.#.###.#
+#.#.#.......#...#
+#.#.###.#####.###
+#.#.#...#.....#.#
+#.#.#.#####.###.#
+#.#.#.........#.#
+#.#.#.#########.#
+#S#.............#
+#################";
 
     private readonly string[] _input;
     private readonly Maze _maze;
@@ -129,14 +129,12 @@ public class Day16 : IDay
         public (int BestScore, List<List<Point>> BestPaths) Traverse()
         {
             var optimalPaths = new List<List<Point>>();
-            var openList = new SortedSet<(int PathScore, Reindeer Reindeer)>(new PriorityComparer<Reindeer>())
-                {(0, new Reindeer(Start, Vector.East))};
+            var openList = new Queue<(int PathScore, Reindeer Reindeer)>();
+            openList.Enqueue((0, new Reindeer(Start, Vector.East, [Start])));
             var bestScore = int.MaxValue;
 
-            while (openList.Count > 0)
+            while (openList.TryDequeue(out var composite))
             {
-                var composite = openList.Min;
-                openList.Remove(composite);
                 var (currentScore, current) = composite;
                 if (currentScore > bestScore) continue;
                 current.Visited.Add(current.Location);
@@ -152,6 +150,8 @@ public class Day16 : IDay
                     if (nextPosition == End)
                     {
                         composite.PathScore += weight;
+                        current.Visited.Add(nextPosition);
+
                         if (composite.PathScore < bestScore)
                         {
                             bestScore = composite.PathScore;
@@ -166,10 +166,11 @@ public class Day16 : IDay
                     var nextReindeer = new Reindeer(nextPosition, direction, [.. current.Visited]);
                     var nextScore = composite.PathScore + weight;
                     CumulativeScore.TryGetValue((nextPosition, direction), out var score);
+
                     if (nextScore <= score)
                     {
                         CumulativeScore[(nextPosition, direction)] = nextScore;
-                        openList.Add((nextScore, nextReindeer));
+                        openList.Enqueue((nextScore, nextReindeer));
                     }
                 }
             }
