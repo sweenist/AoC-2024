@@ -30,12 +30,12 @@ public class DirectionalSpecifications
     public List<Vector> Left { get; set; }
     public List<Vector> Right { get; set; }
 
-    public List<Vector> Move(Vector source)
+    public List<Vector> Move(Vector target)
     {
-        return source == Vector.North ? Up
-            : source == Vector.East ? Right
-            : source == Vector.South ? Down
-            : source == Vector.West ? Left
+        return target == Vector.North ? Up
+            : target == Vector.East ? Right
+            : target == Vector.South ? Down
+            : target == Vector.West ? Left
             : Activate;
     }
 
@@ -47,7 +47,7 @@ public class DirectionalSpecifications
                 Button = new Actor(new Point(2, 0), Vector.Zero);
                 Activate = [Vector.Zero];
                 Up = [Vector.West];
-                Down = [Vector.South, Vector.West];
+                Down = [Vector.West, Vector.South];
                 Left = [Vector.South, Vector.West, Vector.West];
                 Right = [Vector.South];
                 Symbol = 'A';
@@ -58,12 +58,12 @@ public class DirectionalSpecifications
                 Up = [Vector.Zero];
                 Down = [Vector.South];
                 Left = [Vector.South, Vector.West];
-                Right = [Vector.South, Vector.East];
+                Right = [Vector.East, Vector.South];
                 Symbol = '^';
                 break;
             case KeyPad.Down:
                 Button = new Actor(new Point(1, 1), Vector.South);
-                Activate = [Vector.East, Vector.North];
+                Activate = [Vector.North, Vector.East];
                 Up = [Vector.North];
                 Down = [Vector.Zero];
                 Left = [Vector.West];
@@ -129,7 +129,7 @@ public class SpecManager
 
 public class Robot
 {
-    private Point _startPosition = new Point(2, 0);
+    private Point _startPosition = new(2, 0);
     private readonly SpecManager _moveManager;
     public Robot(SpecManager manager, string? name = null)
     {
@@ -139,6 +139,7 @@ public class Robot
     }
 
     public string Name { get; set; }
+    private ConsoleColor Foreground => Controller == null ? ConsoleColor.Cyan : ConsoleColor.Magenta;
     public Point CurrentPosition { get; set; }
     public Robot? Controller { get; set; }
     public long ActionsPerformed { get; set; }
@@ -147,16 +148,16 @@ public class Robot
     public void Move(Vector target, bool draw = false)
     {
         var targets = _moveManager.Act(CurrentPosition, target);
-        Console.WriteLine($"{Name}: target: {target} moves: {targets.Count}");
+        // Console.WriteLine($"{Name}: target: {target} moves: {targets.Count}");
 
         ActionsPerformed += targets.Count;
 
-        Console.WriteLine($"{Name}: CurrentPosition (before): {CurrentPosition}");
+        // Console.WriteLine($"{Name}: CurrentPosition (before): {CurrentPosition}");
         CurrentPosition = _moveManager.GetNewPosition(target);
-        Console.WriteLine($"{Name}: CurrentPosition (after): {CurrentPosition}");
+        // Console.WriteLine($"{Name}: CurrentPosition (after): {CurrentPosition}");
 
         if (draw) Actions += string.Join("", targets.Select(v => MapTokens[v]));
-        Console.WriteLine($"{Name}:\t\t{Actions}");
+        // Console.WriteLine($"{Name}:\t\t{Actions}");
 
         foreach (var t in targets)
             Controller?.Move(t, draw);
@@ -165,9 +166,10 @@ public class Robot
         {
             ActionsPerformed += 1; // act at the end of target set
             Actions += 'A';
+            Controller?.Move(Vector.Zero, draw);
 
-            Console.WriteLine($"{Name}: Activated");
-            Console.WriteLine($"{Name}:\t\t{Actions}");
+            // Console.WriteLine($"{Name}: Activated");
+            // Console.WriteLine($"{Name}:\t\t{Actions}");
         }
     }
 
@@ -178,4 +180,5 @@ public class Robot
         Controller?.Reset();
         Actions = string.Empty;
     }
+    private void ResetColor() => Console.ForegroundColor = Foreground;
 }
