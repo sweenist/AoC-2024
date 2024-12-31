@@ -71,7 +71,7 @@ public partial class Day21 : IDay
 
     public void Part2()
     {
-        var result = Solve(25);
+        var result = Solve(26);
         Console.WriteLine($"The complexity code of twenty five keypad robots was {result}");
     }
 
@@ -131,6 +131,7 @@ public partial class Day21 : IDay
         if (XRef != berserker)
             length = Math.Min(length, ProcessKeyAction($"{horizontal}{vertical}A", depth - 1, cache));
 
+        cache.Add((startKey, nextKey, depth), length);
         return length;
     }
 }
