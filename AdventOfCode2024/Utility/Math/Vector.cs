@@ -105,40 +105,6 @@ public static class VectorExtensions
         return v;
     }
 
-    public static IEnumerable<Vector> Stepify(this IEnumerable<Vector> vectors)
-    {
-        using var e = vectors.GetEnumerator();
-        while (e.MoveNext())
-        {
-            if (e.Current == Vector.Zero || e.Current.IsCardinal())
-            {
-                yield return e.Current;
-                continue;
-            }
-            var currentVector = e.Current;
-            while (currentVector.X > 0)
-            {
-                yield return Vector.East;
-                currentVector.X--;
-            }
-            while (currentVector.Y > 0)
-            {
-                yield return Vector.South;
-                currentVector.Y--;
-            }
-            while (currentVector.X < 0)
-            {
-                yield return Vector.West;
-                currentVector.X++;
-            }
-            while (currentVector.Y < 0)
-            {
-                yield return Vector.North;
-                currentVector.Y++;
-            }
-        }
-    }
-
     public static Dictionary<ICoordinate, char> MapTokens => new()
     {
         { Vector.North, '^'},

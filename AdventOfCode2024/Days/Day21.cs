@@ -1,5 +1,5 @@
-using AdventOfCode2024.Types.Day21;
 using AdventOfCode2024.Utility.Math;
+using static AdventOfCode2024.Utility.Math.VectorExtensions;
 
 namespace AdventOfCode2024.Days;
 
@@ -20,8 +20,6 @@ public partial class Day21 : IDay
         {"379A", "<v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A"},
     };
 
-    private readonly Dictionary<(Point A, Point B), List<List<Vector>>> _possibleNumPaths;
-
     private readonly Dictionary<char, Point> _numPad = new()
     {
         {'7', new Point(0,0)},
@@ -33,26 +31,19 @@ public partial class Day21 : IDay
         {'1', new Point(0,2)},
         {'2', new Point(1,2)},
         {'3', new Point(2,2)},
+        {'X', new Point(0,3)},
         {'0', new Point(1,3)},
         {'A', new Point(2,3)},
     };
 
-
-    private readonly Dictionary<Point, Vector> _dirPad = new()
+    private readonly Dictionary<char, Point> _dirPad = new()
     {
-        { new Point(1,0), Vector.North},
-        { new Point(2,0), Vector.Zero},  //Activate Button
-        { new Point(0,1), Vector.West},
-        { new Point(1,1), Vector.South},
-        { new Point(2,1), Vector.East},
-    };
-    private readonly Dictionary<Vector, Point> _dirPadButtons = new()
-    {
-        {Vector.North, new Point(1,0)},
-        {Vector.Zero, new Point(2,0)},  //Activate Button
-        {Vector.West, new Point(0,1)},
-        {Vector.South, new Point(1,1)},
-        {Vector.East, new Point(2,1)},
+        {'X', new Point(0,0)},  //Berserker "button"
+        {'^', new Point(1,0)},
+        {'A', new Point(2,0)},  //Activate Button
+        {'<', new Point(0,1)},
+        {'v', new Point(1,1)},
+        {'>', new Point(2,1)},
     };
 
     private readonly List<string> _input = [];
@@ -70,146 +61,76 @@ public partial class Day21 : IDay
             using var sr = new StreamReader(inputFile);
             _input.AddRange(sr.ReadToEnd().Split('\n'));
         }
-        _possibleNumPaths = PopulateVectorDictionary().ToDictionary();
     }
 
     public void Part1()
     {
         var result = Solve(3);
-        Console.WriteLine($"The result was {result}");
-        return;
-        var totalComplexity = 0L;
-        var manager = new SpecManager();
-        var radiationRobot = new Robot(manager, "Robbie");
-        var freezingTobot = new Robot(manager, "Freyda");
-
-        radiationRobot.Controller = freezingTobot;
-
-        foreach (var sequence in _input)
-        {
-            var blah = InitializeNumberSequence(sequence);
-            foreach (var keySequence in blah)
-                radiationRobot.Move(keySequence, true);
-            totalComplexity += int.Parse(sequence.Trim('A')) * freezingTobot.ActionsPerformed;
-
-
-            Console.WriteLine($"{sequence} had {freezingTobot.ActionsPerformed} moves");
-            Console.WriteLine($"{sequence}:\n\t{freezingTobot.Actions}\n\t{_assertions[sequence]}");
-            // Console.WriteLine($"{radiationRobot.Name}:\n\t{radiationRobot.Actions}");
-            // Console.WriteLine($"{freezingTobot.Name}:\n\t{freezingTobot.Actions}");
-            radiationRobot.Reset();
-            // break;
-        }
-
-        Console.WriteLine($"Total complexity keypad movements is {totalComplexity}");
+        Console.WriteLine($"The complexity code of two keypad robots was {result}");
     }
 
     public void Part2()
     {
-        throw new NotImplementedException();
+        var result = Solve(25);
+        Console.WriteLine($"The complexity code of twenty five keypad robots was {result}");
     }
 
     private long Solve(int maxDepth)
     {
         var result = 0L;
-        var numSequence = InitializeNumberSequence(_input[0]);
-        var pathCache = new Dictionary<(Point Start, Point End, int Depth), long>();
 
-        foreach (var seq in numSequence)
+        var pathCache = new Dictionary<(char Start, char Next, int Depth), long>();
+
+        foreach (var seq in _input)
         {
-            result += ProcessKeyAction(seq, _dirPadButtons[Vector.Zero], maxDepth, pathCache);
+            var multiplier = int.Parse(seq.TrimEnd('A'));
+            var sequenceResult = ProcessKeyAction(seq, maxDepth, pathCache, true);
+            result += sequenceResult * multiplier;
         }
 
         return result;
     }
 
-    private long ProcessKeyAction(Vector direction, Point initial, int depth, Dictionary<(Point Start, Point End, int Depth), long> cache)
+    private long ProcessKeyAction(string keySequence, int depth, Dictionary<(char Start, char Next, int Depth), long> cache, bool firstRun = false)
     {
-        var score = long.MaxValue;
-        var endPoint = _dirPadButtons[direction];
-        if (cache.TryGetValue((initial, endPoint, depth), out var previous))
-            return previous;
+        if (depth == 0)
+            return keySequence.Length;
 
-        foreach (var paths in _possibleNumPaths[(initial, endPoint)])
+        var currentKey = 'A';
+        var keyLength = 0L;
+        foreach (var key in keySequence)
         {
-            if (depth == 0)
-            {
-                score = 1;
-                break;
-            }
-            var startPoint = initial;
-            Console.WriteLine($"Score for {string.Join(',', paths)}  at {initial} {depth} in direction {direction}");
-            var pathLength = paths.Select(v => ProcessKeyAction(v, startPoint += v, depth - 1, cache)).Sum();
-
-            score = Math.Min(score, pathLength);
+            keyLength += CacheShortest(currentKey, key, depth, cache, firstRun);
+            currentKey = key;
         }
 
-        cache.Add((initial, endPoint, depth), score);
-
-        return score;
+        return keyLength;
     }
 
-    private List<Vector> InitializeNumberSequence(string sequence)
+    private long CacheShortest(char startKey, char nextKey, int depth, Dictionary<(char Start, char Next, int Depth), long> cache, bool firstRun = false)
     {
-        var visited = sequence.Select(s => _numPad[s]).Prepend(_numPad['A']);
-        var vectorDeltas = visited.Zip(visited.Skip(1), (target, src) => Vector.Delta(src, target))
-                                  .SelectMany(x => new[] { x, Vector.Zero })
-                                  .Stepify().ToList();
-        Console.WriteLine($"{sequence}-> {string.Join(',', vectorDeltas)}");
-        return vectorDeltas;
-    }
+        if (cache.TryGetValue((startKey, nextKey, depth), out var existingLength)) return existingLength;
 
-    private static IEnumerable<KeyValuePair<(Point A, Point B), List<List<Vector>>>> PopulateVectorDictionary()
-    {
-        var up = new Point(1, 0);
-        var activate = new Point(2, 0);
-        var left = new Point(0, 1);
-        var down = new Point(1, 1);
-        var right = new Point(2, 1);
+        var length = long.MaxValue;
+        var startPos = firstRun ? _numPad[startKey] : _dirPad[startKey];
+        var endPos = firstRun ? _numPad[nextKey] : _dirPad[nextKey];
 
-        //from activate button paths
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((activate, activate), [[Vector.Zero]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((activate, up), [[Vector.West]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((activate, down),
-            [[Vector.West, Vector.South], [Vector.South, Vector.West]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((activate, right), [[Vector.South]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((activate, left),
-            [[Vector.West, Vector.South, Vector.West], [Vector.South, Vector.West, Vector.West]]);
+        var deltaY = endPos.Y - startPos.Y;
+        var deltaX = endPos.X - startPos.X;
 
-        //from up button paths
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((up, activate), [[Vector.East]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((up, up), [[Vector.Zero]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((up, down), [[Vector.South]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((up, right),
-            [[Vector.South, Vector.East], [Vector.East, Vector.South]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((up, left),
-            [[Vector.South, Vector.West], [Vector.South, Vector.West]]);
+        var vertical = new string(deltaY < 0 ? '^' : 'v', Math.Abs(deltaY));
+        var horizontal = new string(deltaX < 0 ? '<' : '>', Math.Abs(deltaX));
 
-        //from down button paths
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((down, activate),
-            [[Vector.North, Vector.East], [Vector.East, Vector.North]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((down, up), [[Vector.North]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((down, down), [[Vector.Zero]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((down, right), [[Vector.East]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((down, left), [[Vector.West]]);
+        var XRef = new Point(startPos.X, endPos.Y);
+        var berserker = firstRun ? _numPad['X'] : _dirPad['X'];
 
-        //from left button paths
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((left, activate),
-            [[Vector.East, Vector.North, Vector.East], [Vector.East, Vector.East, Vector.North]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((left, up),
-            [[Vector.East, Vector.North]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((left, down), [[Vector.West]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((left, right),
-            [[Vector.East, Vector.East]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((left, left), [[Vector.Zero]]);
+        if (XRef != berserker)
+            length = Math.Min(length, ProcessKeyAction($"{vertical}{horizontal}A", depth - 1, cache));
 
-        //from right button paths
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((right, activate), [[Vector.North]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((right, up),
-            [[Vector.West, Vector.North], [Vector.North, Vector.West]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((right, down), [[Vector.West]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((right, right), [[Vector.Zero]]);
-        yield return new KeyValuePair<(Point A, Point B), List<List<Vector>>>((right, left),
-            [[Vector.West, Vector.West]]);
+        XRef = new Point(endPos.X, startPos.Y);
+        if (XRef != berserker)
+            length = Math.Min(length, ProcessKeyAction($"{horizontal}{vertical}A", depth - 1, cache));
+
+        return length;
     }
 }
